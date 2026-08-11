@@ -1,0 +1,135 @@
+{
+  "search": {
+    "remote_only": true,
+    "linkedin_recent_hours": 24,
+    "linkedin_max_pages": 20,
+    "linkedin_page_size": 25,
+    "euremote_pages": 3,
+    "request_delay_seconds": 2.0,
+    "timeout_seconds": 25,
+    "rate_limit_wait_seconds": 30,
+    "rate_limit_retries": 2
+  },
+
+  "linkedin_queries": [
+    "Software Engineer",
+    "AI Engineer",
+    "Product Manager",
+    "Technical Product Manager"
+  ],
+
+  "role_families": {
+    "Senior Software Engineer": {
+      "title_terms": [
+        "software engineer",
+        "senior software engineer",
+        "software developer",
+        "senior software developer",
+        "backend engineer",
+        "backend developer",
+        "python engineer",
+        "python developer",
+        "platform engineer",
+        "application engineer",
+        "full stack engineer",
+        "full-stack engineer",
+        "lead software engineer"
+      ]
+    },
+
+    "Senior AI Software Engineer": {
+      "title_terms": [
+        "ai engineer",
+        "senior ai engineer",
+        "ai software engineer",
+        "generative ai engineer",
+        "genai engineer",
+        "llm engineer",
+        "applied ai engineer",
+        "agentic ai engineer",
+        "ai application engineer",
+        "machine learning engineer",
+        "ml engineer"
+      ]
+    },
+
+    "Technical Product Manager": {
+      "title_terms": [
+        "technical product manager",
+        "senior technical product manager",
+        "platform product manager",
+        "software product manager",
+        "technical pm",
+        "product manager",
+        "senior product manager",
+        "product owner"
+      ]
+    },
+
+    "AI Product Manager": {
+      "title_terms": [
+        "ai product manager",
+        "senior ai product manager",
+        "product manager ai",
+        "product manager - ai",
+        "ai-native product manager",
+        "ai native product manager",
+        "generative ai product manager",
+        "genai product manager",
+        "machine learning product manager",
+        "ml product manager",
+        "ai platform product manager"
+      ]
+    }
+  },
+
+  "ai_context_terms": [
+    "artificial intelligence",
+    "generative ai",
+    "genai",
+    "llm",
+    "large language model",
+    "machine learning",
+    "ai agents",
+    "ai agent",
+    "agentic ai",
+    "rag",
+    "retrieval augmented generation",
+    "prompt engineering",
+    "ai platform"
+  ],
+
+  "technical_product_context_terms": [
+    "software",
+    "platform",
+    "saas",
+    "api",
+    "apis",
+    "cloud",
+    "developer platform",
+    "enterprise software",
+    "engineering",
+    "technical"
+  ],
+
+  "exclude_title_terms": [
+    "intern",
+    "internship",
+    "graduate",
+    "junior",
+    "sales",
+    "account executive",
+    "recruiter",
+    "human resources",
+    "people generalist",
+    "business analyst",
+    "qa engineer",
+    "qa ",
+    "quality assurance",
+    "alliance manager",
+    "alliances",
+    "casino",
+    "customer support",
+    "marketing manager"
+  ]
+}

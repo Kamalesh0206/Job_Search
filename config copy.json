@@ -1,0 +1,167 @@
+{
+  "search": {
+    "remote_only": true,
+    "linkedin_recent_hours": 24,
+    "linkedin_pages_per_query": 2,
+    "euremote_pages": 5,
+    "request_delay_seconds": 0.5,
+    "timeout_seconds": 20
+  },
+  "role_families": {
+    "Senior Software Engineer": {
+      "search_queries": [
+        "Senior Software Engineer",
+        "Software Engineer",
+        "Senior Software Developer",
+        "Backend Engineer",
+        "Python Engineer",
+        "Platform Engineer",
+        "Lead Software Engineer"
+      ],
+      "title_terms": [
+        "software engineer",
+        "software developer",
+        "backend engineer",
+        "backend developer",
+        "python engineer",
+        "python developer",
+        "platform engineer",
+        "application engineer",
+        "full stack engineer",
+        "full-stack engineer"
+      ],
+      "context_terms": [
+        "python",
+        "api",
+        "rest",
+        "backend",
+        "microservices",
+        "cloud",
+        "software architecture",
+        "system design",
+        "enterprise software"
+      ]
+    },
+    "Senior AI Software Engineer": {
+      "search_queries": [
+        "AI Engineer",
+        "Senior AI Engineer",
+        "AI Software Engineer",
+        "Generative AI Engineer",
+        "GenAI Engineer",
+        "LLM Engineer",
+        "Applied AI Engineer",
+        "Agentic AI Engineer"
+      ],
+      "title_terms": [
+        "ai engineer",
+        "ai software engineer",
+        "generative ai engineer",
+        "genai engineer",
+        "llm engineer",
+        "applied ai engineer",
+        "agentic ai engineer",
+        "machine learning engineer",
+        "ml engineer",
+        "ai application engineer"
+      ],
+      "context_terms": [
+        "llm",
+        "generative ai",
+        "genai",
+        "rag",
+        "retrieval augmented",
+        "ai agent",
+        "agentic",
+        "prompt engineering",
+        "vector database",
+        "semantic search",
+        "langchain",
+        "gemini",
+        "openai",
+        "machine learning"
+      ]
+    },
+    "Technical Product Manager": {
+      "search_queries": [
+        "Technical Product Manager",
+        "Senior Product Manager",
+        "Product Manager Software",
+        "Platform Product Manager",
+        "SaaS Product Manager",
+        "Technical PM"
+      ],
+      "title_terms": [
+        "technical product manager",
+        "senior product manager",
+        "product manager",
+        "platform product manager",
+        "software product manager",
+        "technical pm",
+        "product owner"
+      ],
+      "context_terms": [
+        "software",
+        "platform",
+        "api",
+        "developer",
+        "cloud",
+        "saas",
+        "enterprise",
+        "technical",
+        "engineering",
+        "architecture",
+        "product roadmap",
+        "product strategy"
+      ]
+    },
+    "AI Product Manager": {
+      "search_queries": [
+        "AI Product Manager",
+        "Product Manager AI",
+        "AI Native Product Manager",
+        "Generative AI Product Manager",
+        "GenAI Product Manager",
+        "Machine Learning Product Manager",
+        "AI Platform Product Manager"
+      ],
+      "title_terms": [
+        "ai product manager",
+        "product manager ai",
+        "ai-native product manager",
+        "ai native product manager",
+        "generative ai product manager",
+        "genai product manager",
+        "machine learning product manager",
+        "ml product manager",
+        "ai platform product manager"
+      ],
+      "context_terms": [
+        "ai",
+        "artificial intelligence",
+        "llm",
+        "generative ai",
+        "genai",
+        "machine learning",
+        "ai agent",
+        "agentic",
+        "rag",
+        "prompt",
+        "ai platform",
+        "intelligent automation"
+      ]
+    }
+  },
+  "exclude_title_terms": [
+    "intern",
+    "internship",
+    "student",
+    "graduate",
+    "junior",
+    "sales",
+    "account executive",
+    "marketing manager",
+    "customer support",
+    "recruiter"
+  ]
+}
