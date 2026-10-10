@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Engineer Job Search & Auto-Apply Agent Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <div class="dashboard-container">
+    
+    <!-- Header Bar -->
+    <header class="header-bar">
+      <div class="candidate-profile-block">
+        <div class="avatar-circle">KC</div>
+        <div>
+          <div class="candidate-name">
+            Kamalesan C
+            <span class="badge-tag">AI Engineer</span>
+            <span class="badge-tag" style="color: #a855f7; border-color: rgba(168,85,247,0.3); background: rgba(168,85,247,0.15)">7.4y Exp</span>
+          </div>
+          <div class="candidate-meta">
+            <span>📍 Coimbatore, India</span>
+            <span>📞 +91 7305131264</span>
+            <a href="mailto:kamaleshcai686@gmail.com">✉️ kamaleshcai686@gmail.com</a>
+            <a href="https://www.linkedin.com/in/kamalesan-c-546646442" target="_blank" rel="noopener">🔗 LinkedIn Profile</a>
+            <a href="https://github.com/AdminEpiware/EpiAgent-PMO" target="_blank" rel="noopener">💻 GitHub Portfolio</a>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-run-search" class="btn btn-primary" onclick="triggerSearch()">
+          <span id="search-spinner" class="spinner" style="display: none;"></span>
+          <span id="search-icon">🚀</span> Run Job Search
+        </button>
+        <a href="/api/resume" target="_blank" class="btn">
+          📄 View Resume PDF
+        </a>
+      </div>
+    </header>
+
+    <!-- Stats Cards -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Total Jobs Discovered</div>
+          <div id="stat-total" class="stat-value">--</div>
+        </div>
+        <div class="stat-icon icon-cyan">📊</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Pending / In Review</div>
+          <div id="stat-review" class="stat-value">--</div>
+        </div>
+        <div class="stat-icon icon-amber">⏳</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Submitted Applications</div>
+          <div id="stat-applied" class="stat-value">--</div>
+        </div>
+        <div class="stat-icon icon-emerald">✅</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Interviews / Positive</div>
+          <div id="stat-interviews" class="stat-value">--</div>
+        </div>
+        <div class="stat-icon icon-indigo">🎯</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('jobs')">
+        💼 Job Tracker & Auto-Apply
+      </button>
+      <button class="tab-btn" onclick="switchTab('direct-apply')">
+        ⚡ Direct Job Applier
+      </button>
+      <button class="tab-btn" onclick="switchTab('outreach')">
+        💬 Recruiter Outreach Studio
+      </button>
+      <button class="tab-btn" onclick="switchTab('profile')">
+        👤 Candidate Profile & ATS Resume
+      </button>
+    </nav>
+
+    <!-- Tab 1: Job Tracker -->
+    <div id="tab-jobs" class="tab-pane active">
+      <div class="toolbar">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="job-search-input" placeholder="Search title, company, or location..." oninput="handleSearchFilter()">
+        </div>
+
+        <div class="filters-group">
+          <select id="role-filter" class="filter-select" onchange="handleSearchFilter()">
+            <option value="All">All Role Categories</option>
+            <option value="Senior AI Software Engineer">Senior AI Software Engineer</option>
+            <option value="Senior Software Engineer">Senior Software Engineer</option>
+            <option value="Technical Product Manager">Technical Product Manager</option>
+            <option value="AI Product Manager">AI Product Manager</option>
+          </select>
+
+          <select id="status-filter" class="filter-select" onchange="handleSearchFilter()">
+            <option value="All">All Statuses</option>
+            <option value="New">New</option>
+            <option value="Review">Review</option>
+            <option value="Applied">Applied</option>
+            <option value="Interview">Interview</option>
+            <option value="Skip">Skip</option>
+          </select>
+
+          <button class="btn btn-sm" onclick="fetchJobs()">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-wrapper">
+          <table class="jobs-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">ID</th>
+                <th>Role Category</th>
+                <th>Job Title</th>
+                <th>Company</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="jobs-table-body">
+              <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-faint); padding: 30px;">
+                  Loading jobs from Excel database...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Direct Job Applier -->
+    <div id="tab-direct-apply" class="tab-pane">
+      <div class="form-card">
+        <div class="form-title">⚡ Instant Automated Job Applier</div>
+        <div class="form-subtitle">
+          Paste any job posting URL (Greenhouse, Lever, LinkedIn, or custom ATS). The agent will launch Playwright, load your 7.4-year AI profile, generate a tailored cover letter, and populate the ATS form.
+        </div>
+
+        <div class="form-group">
+          <label for="apply-url">Target Job Application URL *</label>
+          <input type="url" id="apply-url" class="form-control" placeholder="https://boards.greenhouse.io/... or https://jobs.lever.co/..." required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="apply-title">Job Title</label>
+            <input type="text" id="apply-title" class="form-control" value="AI Engineer">
+          </div>
+          <div class="form-group">
+            <label for="apply-company">Company Name</label>
+            <input type="text" id="apply-company" class="form-control" value="Target Company">
+          </div>
+        </div>
+
+        <div class="checkbox-row">
+          <label class="checkbox-item">
+            <input type="checkbox" id="apply-headless">
+            <span>Run in Background (Headless Mode)</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="apply-dryrun" checked>
+            <span>Interactive Review Mode (Pre-fill without auto-submitting)</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="apply-autosubmit">
+            <span>Auto-Submit after form completion</span>
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 10px;">
+          <button id="btn-launch-apply" class="btn btn-primary" onclick="launchDirectApply()">
+            <span id="apply-spinner" class="spinner" style="display: none;"></span>
+            🚀 Launch Apply Agent
+          </button>
+          <button class="btn" onclick="previewDirectCoverLetter()">
+            ✉️ Preview Tailored Cover Letter
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Recruiter Outreach Studio -->
+    <div id="tab-outreach" class="tab-pane">
+      <div class="form-card">
+        <div class="form-title">💬 Recruiter Outreach Message Studio</div>
+        <div class="form-subtitle">
+          Generate high-conversion outreach templates customized with Kamalesan's AI Engineer background, projects, and LinkedIn profile.
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="outreach-name">Recruiter / Manager Name</label>
+            <input type="text" id="outreach-name" class="form-control" placeholder="e.g., Sarah Jenkins" value="Hiring Manager">
+          </div>
+          <div class="form-group">
+            <label for="outreach-company">Company Name</label>
+            <input type="text" id="outreach-company" class="form-control" placeholder="e.g., Anthropic / Scale AI" value="Target Company">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="outreach-role">Target Role</label>
+          <input type="text" id="outreach-role" class="form-control" placeholder="e.g., AI Engineer / Generative AI Engineer" value="AI Engineer">
+        </div>
+
+        <button class="btn btn-primary" onclick="generateOutreachStudio()">
+          ✨ Generate Personalized Outreach Messages
+        </button>
+
+        <div id="outreach-results" style="margin-top: 28px; display: none;">
+          <!-- LinkedIn Connection Note -->
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label>1. LinkedIn Connection Request Note (<300 Characters)</label>
+              <button class="btn btn-sm" onclick="copyFromElement('outreach-note-box')">📋 Copy Note</button>
+            </div>
+            <div id="outreach-note-box" class="copy-block"></div>
+          </div>
+
+          <!-- Recruiter InMail -->
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label>2. LinkedIn Direct InMail / Recruiter Pitch</label>
+              <button class="btn btn-sm" onclick="copyFromElement('outreach-inmail-box')">📋 Copy InMail</button>
+            </div>
+            <div id="outreach-inmail-box" class="copy-block"></div>
+          </div>
+
+          <!-- Cold Email -->
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label>3. Hiring Manager Cold Email</label>
+              <button class="btn btn-sm" onclick="copyColdEmail()">📋 Copy Subject & Body</button>
+            </div>
+            <div style="font-weight: 600; color: #38bdf8; margin-bottom: 4px; font-size: 13px;" id="outreach-email-subject"></div>
+            <div id="outreach-email-body" class="copy-block"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Candidate Profile & Resume -->
+    <div id="tab-profile" class="tab-pane">
+      <div class="form-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <div class="form-title">👤 Candidate Profile & ATS Resume</div>
+            <div class="form-subtitle">Configured profile parameters used by the automated applying agent.</div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-indigo" onclick="regenerateResumePdf()">
+              <span id="regen-spinner" class="spinner" style="display: none;"></span>
+              🔄 Regenerate Resume PDF
+            </button>
+            <a href="/api/resume" target="_blank" class="btn btn-primary">
+              📥 Download PDF
+            </a>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="prof-name" class="form-control" readonly>
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="text" id="prof-email" class="form-control" readonly>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" id="prof-phone" class="form-control" readonly>
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" id="prof-location" class="form-control" readonly>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>LinkedIn Profile</label>
+            <input type="text" id="prof-linkedin" class="form-control" readonly>
+          </div>
+          <div class="form-group">
+            <label>GitHub Profile</label>
+            <input type="text" id="prof-github" class="form-control" readonly>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Work Authorization & Mobility</label>
+          <input type="text" id="prof-auth" class="form-control" readonly>
+        </div>
+
+        <div class="form-group">
+          <label>Cover Letter Template</label>
+          <textarea id="prof-coverletter" class="form-control" rows="8" readonly></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Live ATS Resume Preview</label>
+          <iframe src="/api/resume" style="width: 100%; height: 600px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: #ffffff;"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Terminal / Agent Activity Console -->
+    <div class="terminal-card">
+      <div class="terminal-header">
+        <div class="terminal-title">
+          <span style="color: #22c55e;">●</span> Agent Live Activity Console
+        </div>
+        <div id="terminal-status" style="font-size: 11px; color: var(--text-faint);">Agent Idle</div>
+      </div>
+      <div id="terminal-body" class="terminal-body">
+[SYSTEM] Agent Dashboard initialized. Ready to search or apply.
+[CONFIG] Loaded candidate Kamalesan C (7.4y AI Engineer)
+[STATUS] Local database contains tracked opportunities. Ready!
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Cover Letter Modal -->
+  <div id="modal-cover-letter" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-cl-title">Tailored Cover Letter Preview</h3>
+        <button class="modal-close" onclick="closeModal('modal-cover-letter')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-cl-text" class="copy-block"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('modal-cover-letter')">Close</button>
+        <button class="btn btn-primary" onclick="copyFromElement('modal-cl-text')">📋 Copy Cover Letter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recruiter Modal -->
+  <div id="modal-outreach" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-outreach-title">Recruiter Outreach Templates</h3>
+        <button class="modal-close" onclick="closeModal('modal-outreach')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <strong style="font-size: 13px; color: #38bdf8;">LinkedIn Connection Note (&le;300 Chars)</strong>
+            <button class="btn btn-sm" onclick="copyFromElement('modal-outreach-note')">📋 Copy</button>
+          </div>
+          <div id="modal-outreach-note" class="copy-block"></div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <strong style="font-size: 13px; color: #38bdf8;">LinkedIn InMail / Recruiter Message</strong>
+            <button class="btn btn-sm" onclick="copyFromElement('modal-outreach-inmail')">📋 Copy</button>
+          </div>
+          <div id="modal-outreach-inmail" class="copy-block"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('modal-outreach')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">Action completed!</div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
