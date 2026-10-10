@@ -1,0 +1,109 @@
+{
+  "personal_profile": {
+    "first_name": "Kamalesan",
+    "last_name": "C",
+    "email": "kamaleshcai686@gmail.com",
+    "phone": "+91 7305131264",
+    "city": "Coimbatore",
+    "state": "Tamil Nadu",
+    "country": "India",
+    "linkedin": "https://www.linkedin.com/in/kamalesan-c-546646442",
+    "github": "https://github.com/AdminEpiware/EpiAgent-PMO",
+    "total_experience_years": "7.4"
+  },
+  "profiles": {
+    "automotive_test_engineer": {
+      "target_roles": [
+        "Automotive Test Engineer",
+        "HIL/SIL Test Engineer",
+        "ECU Validation Engineer",
+        "Powertrain Validation Engineer",
+        "Embedded Test Engineer",
+        "Automotive Software Test Engineer"
+      ],
+      "core_expertise": [
+        "HIL & SIL Testing",
+        "ECU Validation",
+        "Powertrain Management System Testing",
+        "Test Automation",
+        "Python",
+        "ECU-TEST",
+        "CANoe / CANalyzer",
+        "INCA / UDE",
+        "dSPACE SCALEXIO",
+        "ETAS LABCAR",
+        "SystemDesk / ControlDesk",
+        "CAN, LIN, FlexRay, Ethernet",
+        "UDS, OBD-II, OBDonUDS",
+        "Diagnostic Testing",
+        "Requirements-based Testing",
+        "Regression Testing",
+        "Test Execution & Failure Analysis",
+        "Mercedes-Benz Powertrain validation experience"
+      ],
+      "keywords": [
+        "HIL", "SIL", "ECU", "Powertrain", "ECU-TEST", "CANoe", "CANalyzer",
+        "INCA", "UDE", "dSPACE", "SCALEXIO", "ETAS", "LABCAR", "SystemDesk",
+        "ControlDesk", "CAN", "LIN", "FlexRay", "Ethernet", "UDS", "OBD-II",
+        "OBDonUDS", "Diagnostics", "Regression Testing", "Failure Analysis"
+      ],
+      "priority_projects": [
+        "Mercedes-Benz Powertrain Testing",
+        "HIL/SIL Test Automation",
+        "ECU Validation",
+        "Diagnostic Testing"
+      ]
+    },
+    "ai_engineer": {
+      "target_roles": [
+        "AI Engineer",
+        "Generative AI Engineer",
+        "AI Application Engineer",
+        "AI Agent Engineer",
+        "LLM Engineer",
+        "Python AI Engineer",
+        "AI Automation Engineer",
+        "Backend AI Engineer"
+      ],
+      "core_expertise": [
+        "Generative AI",
+        "LLM Applications",
+        "AI Agents",
+        "Prompt Engineering",
+        "Gemini API",
+        "OpenAI API",
+        "Python",
+        "FastAPI",
+        "REST APIs",
+        "PostgreSQL",
+        "SQLAlchemy",
+        "Redis",
+        "React",
+        "Docker",
+        "Git / GitHub",
+        "Google Cloud / Cloud Run",
+        "MCP",
+        "RAG concepts",
+        "AI workflow orchestration",
+        "Human-in-the-loop AI systems",
+        "AI automation",
+        "API integration",
+        "AI dashboards",
+        "AI governance and audit workflows"
+      ],
+      "keywords": [
+        "Generative AI", "LLM", "AI Agents", "Prompt Engineering", "Gemini API",
+        "OpenAI API", "Python", "FastAPI", "REST API", "PostgreSQL", "SQLAlchemy",
+        "Redis", "React", "Docker", "Git", "GitHub", "GCP", "Cloud Run", "MCP",
+        "RAG", "Workflow Orchestration", "HITL", "AI Automation", "AI Governance"
+      ],
+      "priority_projects": [
+        "EpiAgent PMO — AI Project Governance & Risk Management Platform",
+        "AI-Powered SIL Test Automation Platform",
+        "Automation Job Applying Agent",
+        "AI Instagram Publisher Agent",
+        "HyGreen — Smart Grocery / E-commerce Application"
+      ]
+    }
+  }
+}

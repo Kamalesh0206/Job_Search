@@ -90,3 +90,51 @@ def append_jobs(path: Path, rows):
         ws.add_table(tab)
 
     wb.save(path)
+
+def load_jobs_by_status(path: Path, target_statuses=None):
+    if not path.exists():
+        return []
+    target_statuses = target_statuses or ["New", "Review"]
+    wb = load_workbook(path, read_only=True)
+    ws = wb["Jobs"]
+    jobs = []
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if not row or len(row) < 10:
+            continue
+        job_id, found_date, posted_date, role_category, title, company, location, source, url, status = row[:10]
+        fp = row[10] if len(row) >= 11 else ""
+        if status in target_statuses:
+            jobs.append({
+                "id": job_id,
+                "found_date": found_date,
+                "posted_date": posted_date,
+                "role_category": role_category,
+                "title": title,
+                "company": company,
+                "location": location,
+                "source": source,
+                "url": url,
+                "status": status,
+                "fingerprint": fp
+            })
+    wb.close()
+    return jobs
+
+def update_job_status(path: Path, identifier, new_status: str) -> bool:
+    if not path.exists():
+        return False
+    wb = load_workbook(path)
+    ws = wb["Jobs"]
+    updated = False
+    for row in ws.iter_rows(min_row=2):
+        cell_id = row[0].value
+        cell_fp = row[10].value if len(row) >= 11 else None
+        if str(cell_id) == str(identifier) or (cell_fp and str(cell_fp) == str(identifier)):
+            row[9].value = new_status  # Status column (0-indexed 9 = Column J)
+            updated = True
+            break
+    if updated:
+        wb.save(path)
+    wb.close()
+    return updated
+

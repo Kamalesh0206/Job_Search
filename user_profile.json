@@ -1,0 +1,58 @@
+{
+  "personal": {
+    "first_name": "Kamalesan",
+    "last_name": "C",
+    "email": "kamaleshcai686@gmail.com",
+    "phone": "+91 7305131264",
+    "city": "Coimbatore",
+    "state": "Tamil Nadu",
+    "country": "India",
+    "postal_code": "641001",
+    "address": "Coimbatore, Tamil Nadu, India"
+  },
+  "links": {
+    "linkedin": "https://www.linkedin.com/in/kamalesan-c-546646442",
+    "github": "https://github.com/AdminEpiware/EpiAgent-PMO",
+    "portfolio": "https://www.linkedin.com/in/kamalesan-c-546646442",
+    "website": "https://www.linkedin.com/in/kamalesan-c-546646442"
+  },
+  "documents": {
+    "resume_path": "resume.pdf",
+    "default_cover_letter": "Dear Hiring Manager,\n\nI am writing to express my interest in the {title} opportunity within {company}. With 7.4 years of engineering experience across Generative AI, Python automation, automotive embedded systems, and software testing, I bring a strong combination of technical expertise, problem-solving skills, and practical AI application development experience.\n\nMy technical skills include Python, FastAPI, REST APIs, Gemini and OpenAI APIs, AI agent development, prompt engineering, PostgreSQL, Docker, and workflow automation. I have designed AI-powered applications for engineering test automation, project governance and risk management (EpiAgent PMO), and business process automation.\n\nIn my current role at Capgemini Technology Services India, working with Bosch Global Software Technologies, I contribute to automotive ECU validation, HIL/SIL testing, and Python-based test automation. This experience has strengthened my ability to understand complex engineering requirements and develop automation solutions that improve efficiency and reliability.\n\nI am particularly interested in opportunities involving Generative AI, LLM applications, AI agents, intelligent automation, and AI-assisted software testing. I am eager to apply my combined AI and engineering experience to solve real-world challenges and contribute to innovative projects at {company}.\n\nI am open to international relocation and remote work opportunities worldwide, and welcome consideration for positions that offer work visa sponsorship.\n\nPlease find my resume attached for your consideration. I look forward to the opportunity to discuss how my skills and experience align with your team's goals.\n\nYours sincerely,\nKamalesan C\nAI Engineer | Generative AI | AI Agents | Python Automation"
+  },
+  "work_authorization": {
+    "authorized_in_us": "No",
+    "authorized_in_eu": "No",
+    "authorized_in_india": "Yes",
+    "require_sponsorship": "Yes",
+    "visa_status": "Citizen of India (Open to Relocation / Remote / Sponsorship)",
+    "open_to_relocation": "Yes",
+    "remote_preference": "Remote / Hybrid / Relocation"
+  },
+  "preferences": {
+    "years_of_experience": "7.4",
+    "notice_period": "Negotiable / Immediate",
+    "desired_roles": [
+      "AI Engineer",
+      "Generative AI Engineer",
+      "AI Agent Engineer",
+      "LLM Engineer",
+      "AI Automation Engineer",
+      "Python AI Engineer",
+      "Backend AI Engineer"
+    ],
+    "salary_expectation": "Competitive / Open to Discussion"
+  },
+  "standard_answers": {
+    "legally authorized": "Yes (Authorized to work in India, open to remote and visa-sponsored relocation)",
+    "work authorization": "Yes (Authorized in India; requires visa sponsorship for US/EU on-site)",
+    "sponsorship": "Yes",
+    "require sponsorship": "Yes",
+    "how did you hear": "LinkedIn",
+    "notice period": "Negotiable",
+    "gender": "Male",
+    "race": "Asian",
+    "veteran": "I am not a protected veteran",
+    "disability": "No, I do not have a disability"
+  }
+}
