@@ -1,6 +1,72 @@
 // ==========================================================================
 // Dual-Role Job Search & Application Automation Agent - Client Application
+// Production Cloud & Local Compatible Architecture
 // ==========================================================================
+
+// Environment API Base Configuration:
+// Uses explicitly provided window.API_BASE_URL if set; otherwise uses current origin.
+const API_BASE = window.API_BASE_URL || window.location.origin;
+
+function getAuthHeaders() {
+  const token = sessionStorage.getItem('agent_auth_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+async function apiFetch(endpoint, options = {}) {
+  const fullUrl = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+  const headers = {
+    ...getAuthHeaders(),
+    ...(options.headers || {})
+  };
+  const response = await fetch(fullUrl, { ...options, headers });
+  if (response.status === 401) {
+    promptLogin();
+    throw new Error('Authentication required: please log in.');
+  }
+  return response;
+}
+
+function promptLogin() {
+  if (document.getElementById('auth-modal-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'auth-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,15,30,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:99999;';
+  overlay.innerHTML = `
+    <div style="background:#131d33;border:1px solid #1e293b;border-radius:14px;padding:32px;width:90%;max-width:380px;box-shadow:0 20px 40px rgba(0,0,0,0.6);text-align:center;">
+      <div style="font-size:2rem;margin-bottom:12px;">🔒</div>
+      <h3 style="color:#f8fafc;margin-bottom:8px;font-size:1.25rem;">Remote Access Security</h3>
+      <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:20px;">Enter your dashboard credentials to access candidate profiles, resumes, and actions.</p>
+      <input id="authUsernameInput" type="text" placeholder="Username (e.g. admin)" style="width:100%;padding:10px 14px;background:#0b1120;border:1px solid #334155;border-radius:8px;color:#fff;margin-bottom:12px;box-sizing:border-box;">
+      <input id="authPasswordInput" type="password" placeholder="Password" style="width:100%;padding:10px 14px;background:#0b1120;border:1px solid #334155;border-radius:8px;color:#fff;margin-bottom:20px;box-sizing:border-box;">
+      <button id="authSubmitBtn" style="width:100%;padding:11px;background:#0284c7;color:#fff;font-weight:700;border:none;border-radius:8px;cursor:pointer;">Unlock Dashboard</button>
+      <div id="authErrorMsg" style="color:#f43f5e;font-size:0.8rem;margin-top:10px;display:none;"></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById('authSubmitBtn').onclick = async () => {
+    const user = document.getElementById('authUsernameInput').value.trim();
+    const pass = document.getElementById('authPasswordInput').value;
+    const errDiv = document.getElementById('authErrorMsg');
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: pass })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Login failed');
+      sessionStorage.setItem('agent_auth_token', data.token);
+      overlay.remove();
+      showToast('Authenticated successfully!', 'success');
+      fetchStats();
+      fetchJobs();
+    } catch (err) {
+      errDiv.textContent = err.message;
+      errDiv.style.display = 'block';
+    }
+  };
+}
 
 const state = {
   activeProfile: 'ALL',
@@ -81,7 +147,7 @@ function switchTab(tabId) {
 // Fetch Real Stored Records Stats (Section 10)
 async function fetchStats() {
   try {
-    const res = await fetch(`/api/stats?profile=${state.activeProfile}`);
+    const res = await apiFetch(`/api/stats?profile=${state.activeProfile}`);
     if (!res.ok) throw new Error('Failed to fetch stats');
     const data = await res.json();
     state.stats = data;
@@ -135,7 +201,7 @@ async function fetchJobs() {
   if (state.filters.search) params.append('search', state.filters.search);
 
   try {
-    const res = await fetch(`/api/jobs?${params.toString()}`);
+    const res = await apiFetch(`/api/jobs?${params.toString()}`);
     if (!res.ok) throw new Error('Failed to fetch jobs');
     const data = await res.json();
     state.jobs = data.jobs || [];
@@ -192,6 +258,8 @@ function renderJobsTable(jobs) {
 
     const matchedSnippet = job.matched_skills ? job.matched_skills.split(',').slice(0, 3).map(s => `<span class="skill-chip">${escapeHtml(s.trim())}</span>`).join('') : '<span style="color: var(--text-dim); font-size: 0.75rem;">—</span>';
 
+    const jobIdAttr = escapeHtml(String(job.id));
+
     tr.innerHTML = `
       <td><span class="score-pill ${scoreClass}">${score}</span></td>
       <td><span class="badge-role ${roleClass}">${escapeHtml(pid)}</span></td>
@@ -207,16 +275,16 @@ function renderJobsTable(jobs) {
       <td><div class="skills-tag-wrap">${matchedSnippet}</div></td>
       <td><span class="status-badge ${statusClass}">${escapeHtml(job.status || 'DISCOVERED')}</span></td>
       <td style="text-align: right;">
-        <button class="btn btn-secondary btn-xs" onclick="openJobDrawer(${job.id})">
+        <button class="btn btn-secondary btn-xs" onclick="openJobDrawer('${jobIdAttr}')">
           🔍 Inspect
         </button>
         ${statusNorm !== 'APPROVED' && statusNorm !== 'APPLIED' ? `
-          <button class="btn btn-emerald btn-xs" onclick="quickApprove(${job.id}, event)" title="Approve for submission">
+          <button class="btn btn-emerald btn-xs" onclick="quickApprove('${jobIdAttr}', event)" title="Approve for submission">
             ✓
           </button>
         ` : ''}
         ${statusNorm !== 'REJECTED' ? `
-          <button class="btn btn-rose btn-xs" onclick="quickReject(${job.id}, event)" title="Reject">
+          <button class="btn btn-rose btn-xs" onclick="quickReject('${jobIdAttr}', event)" title="Reject">
             ✕
           </button>
         ` : ''}
@@ -250,7 +318,7 @@ function applyFilters() {
 async function quickApprove(jobId, e) {
   if (e) e.stopPropagation();
   try {
-    const res = await fetch(`/api/jobs/${jobId}/approve`, { method: 'POST' });
+    const res = await apiFetch(`/api/jobs/${jobId}/approve`, { method: 'POST' });
     if (!res.ok) throw new Error('Failed to approve');
     showToast('Job approved for submission package', 'success');
     fetchJobs();
@@ -263,7 +331,7 @@ async function quickApprove(jobId, e) {
 async function quickReject(jobId, e) {
   if (e) e.stopPropagation();
   try {
-    const res = await fetch(`/api/jobs/${jobId}/reject`, { method: 'POST' });
+    const res = await apiFetch(`/api/jobs/${jobId}/reject`, { method: 'POST' });
     if (!res.ok) throw new Error('Failed to reject');
     showToast('Job marked as rejected', 'info');
     fetchJobs();
@@ -318,37 +386,43 @@ async function openJobDrawer(jobId) {
   }
 
   // Resume Download link
-  const resumeDownload = document.getElementById('drawerResumeDownload');
-  const targetPid = pid.includes('TEST') ? 'TEST_ENGINEER' : 'AI_ENGINEER';
-  resumeDownload.href = `/api/resume/${targetPid}`;
-  document.getElementById('drawerResumeName').textContent = targetPid === 'TEST_ENGINEER' ? 'Kamalesan_C_Test_Engineer_Resume.pdf' : 'Kamalesan_C_AI_Engineer_Resume.pdf';
+  const resumeBtn = document.getElementById('drawerResumeDownloadBtn');
+  if (resumeBtn) {
+    resumeBtn.href = `${API_BASE}/api/resume/${pid.includes('TEST') ? 'TEST_ENGINEER' : 'AI_ENGINEER'}`;
+  }
+
+  // Job Listing External Link
+  const linkBtn = document.getElementById('drawerJobUrlLink');
+  if (linkBtn) {
+    linkBtn.href = job.url;
+  }
 
   // Description
-  document.getElementById('drawerDescription').textContent = job.description || 'No extended description available.';
+  document.getElementById('drawerDescription').textContent = job.description || 'Full description recorded in persistent database.';
 
-  // External link
-  const extLink = document.getElementById('drawerExternalLink');
-  extLink.href = job.url || '#';
-
-  // Load Tailored Cover Letter
+  // Load / Generate Tailored Cover Letter
   loadDrawerCoverLetter(job.id);
 
-  // Show Drawer
-  document.getElementById('jobDrawerOverlay').style.display = 'flex';
+  // Status Badge in Drawer
+  const statusEl = document.getElementById('drawerStatusBadge');
+  statusEl.textContent = (job.status || 'DISCOVERED').toUpperCase();
+  statusEl.className = `status-badge status-${(job.status || 'DISCOVERED').toLowerCase()}`;
+
+  document.getElementById('jobDrawer').classList.add('open');
+  document.getElementById('drawerBackdrop').classList.add('open');
 }
 
-function closeJobDrawer(e) {
-  if (e && e.target !== e.currentTarget && e.target.id !== 'jobDrawerOverlay') return;
-  document.getElementById('jobDrawerOverlay').style.display = 'none';
+function closeJobDrawer() {
+  document.getElementById('jobDrawer').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('open');
   state.selectedJob = null;
 }
 
 async function loadDrawerCoverLetter(jobId) {
   const box = document.getElementById('drawerCoverLetterText');
-  box.value = 'Loading tailored cover letter...';
-
+  box.value = 'Loading tailored cover letter from storage...';
   try {
-    const res = await fetch(`/api/jobs/${jobId}/cover-letter`);
+    const res = await apiFetch(`/api/jobs/${jobId}/cover-letter`);
     if (!res.ok) throw new Error('Could not load cover letter');
     const data = await res.json();
     box.value = data.cover_letter || '';
@@ -361,7 +435,7 @@ async function regenerateDrawerDocs() {
   if (!state.selectedJob) return;
   showToast('Regenerating tailored documents...', 'info');
   try {
-    const res = await fetch(`/api/jobs/${state.selectedJob.id}/generate-documents`, { method: 'POST' });
+    const res = await apiFetch(`/api/jobs/${state.selectedJob.id}/generate-documents`, { method: 'POST' });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Failed');
     document.getElementById('drawerCoverLetterText').value = data.cover_letter || '';
@@ -388,7 +462,7 @@ async function launchPlaywrightApply() {
   if (!state.selectedJob) return;
   const job = state.selectedJob;
 
-  if (!confirm(`Launch Playwright browser assistant for ${job.title} at ${job.company}?\n\nExplicit approval will be recorded.`)) {
+  if (!confirm(`Launch application assistant for ${job.title} at ${job.company}?\n\nExplicit approval will be recorded.`)) {
     return;
   }
 
@@ -400,13 +474,13 @@ async function launchPlaywrightApply() {
       company_name: job.company,
       job_description: job.description,
       profile_id: job.profile_id,
-      headless: false,
+      headless: true, // Default to headless for cloud stability
       dry_run: true,
       auto_submit: false,
       explicit_approval: true
     };
 
-    const res = await fetch('/api/apply', {
+    const res = await apiFetch('/api/apply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -429,7 +503,7 @@ async function triggerSearch() {
   if (spinner) spinner.style.display = 'inline-block';
 
   try {
-    const res = await fetch('/api/search', {
+    const res = await apiFetch('/api/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ profile: state.activeProfile })
@@ -450,99 +524,106 @@ function pollSearchStatus() {
   const btn = document.getElementById('btn-run-search');
   const spinner = document.getElementById('search-spinner');
 
-  if (state.searchPollingInterval) clearInterval(state.searchPollingInterval);
+  if (state.searchPollingInterval) {
+    clearInterval(state.searchPollingInterval);
+  }
 
   state.searchPollingInterval = setInterval(async () => {
     try {
-      const res = await fetch('/api/stats');
+      const res = await apiFetch('/api/stats');
+      if (!res.ok) return;
       const data = await res.json();
       const task = data.search_task;
 
       if (task && task.status === 'running') {
         if (banner) banner.style.display = 'flex';
-        if (bannerText) bannerText.textContent = task.message || 'Job search running...';
+        if (bannerText) bannerText.textContent = task.message;
         if (btn) btn.disabled = true;
         if (spinner) spinner.style.display = 'inline-block';
       } else {
         if (banner) banner.style.display = 'none';
         if (btn) btn.disabled = false;
         if (spinner) spinner.style.display = 'none';
-        clearInterval(state.searchPollingInterval);
 
         if (task && task.status === 'completed') {
-          showToast(task.message, 'success');
           fetchStats();
           fetchJobs();
+          clearInterval(state.searchPollingInterval);
+          state.searchPollingInterval = null;
+        } else if (task && task.status === 'error') {
+          showToast(task.message, 'error');
+          clearInterval(state.searchPollingInterval);
+          state.searchPollingInterval = null;
         }
       }
     } catch (e) {
-      clearInterval(state.searchPollingInterval);
+      // Continue polling silently
     }
   }, 3000);
 }
 
-// Cover Letter Studio Tab
-async function generateStudioCoverLetter() {
-  const profileId = document.getElementById('clProfileSelect').value;
-  const company = document.getElementById('clCompanyInput').value.trim();
-  const title = document.getElementById('clTitleInput').value.trim();
-  const desc = document.getElementById('clDescInput').value.trim();
-
-  if (!company || !title) {
-    showToast('Please enter both company name and job title', 'warning');
-    return;
-  }
-
-  showToast('Generating tailored cover letter...', 'info');
-  try {
-    const res = await fetch('/api/cover-letter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        company_name: company,
-        job_title: title,
-        job_description: desc,
-        profile_id: profileId
-      })
-    });
-    const data = await res.json();
-    document.getElementById('clOutputText').value = data.cover_letter || '';
-    showToast(`Letter generated and saved into ${profileId} documents!`, 'success');
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-}
-
-function copyCoverLetterText() {
-  const text = document.getElementById('clOutputText').value;
-  if (!text) return;
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('Cover letter copied to clipboard!', 'success');
-  });
-}
-
-// Recruiter Outreach Tab
-async function generateOutreachNotes() {
-  const recruiter = document.getElementById('outreachRecruiterName').value.trim();
-  const company = document.getElementById('outreachCompany').value.trim();
-  const role = document.getElementById('outreachRole').value.trim();
+// Outreach Generator Tab
+async function generateOutreach() {
+  const recruiter = document.getElementById('outreachRecruiterName').value.trim() || 'Hiring Manager';
+  const company = document.getElementById('outreachCompanyName').value.trim() || 'Target Company';
+  const role = document.getElementById('outreachRoleTitle').value.trim() || 'AI Engineer';
+  const profileId = document.getElementById('outreachProfileSelect').value || 'AI_ENGINEER';
 
   try {
-    const res = await fetch('/api/outreach', {
+    showToast('Generating personalized multi-channel outreach templates...', 'info');
+    const res = await apiFetch('/api/outreach', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         recruiter_name: recruiter,
         company_name: company,
-        role_title: role
+        role_title: role,
+        profile_id: profileId
       })
     });
     const data = await res.json();
-    document.getElementById('outreachLinkedInNote').value = data.linkedin_note || '';
-    document.getElementById('outreachInMail').value = data.linkedin_inmail || '';
-    document.getElementById('outreachEmailSub').value = data.cold_email_subject || '';
-    document.getElementById('outreachEmailBody').value = data.cold_email_body || '';
-    showToast('Outreach communications generated!', 'success');
+    if (!res.ok) throw new Error(data.detail || 'Failed');
+
+    document.getElementById('outreachLinkedinNote').value = data.linkedin_note;
+    document.getElementById('outreachInMail').value = data.linkedin_inmail;
+    document.getElementById('outreachEmailSubject').value = data.cold_email_subject;
+    document.getElementById('outreachEmailBody').value = data.cold_email_body;
+    document.getElementById('outreachFollowup').value = data.followup;
+
+    showToast('Outreach package ready for review!', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// Cover Letter Generator Tab
+async function generateStandaloneCoverLetter() {
+  const comp = document.getElementById('clCompanyName').value.trim();
+  const title = document.getElementById('clJobTitle').value.trim();
+  const desc = document.getElementById('clJobDesc').value.trim();
+  const pid = document.getElementById('clProfileSelect').value;
+
+  if (!comp || !title) {
+    showToast('Please provide Company Name and Job Title', 'warning');
+    return;
+  }
+
+  try {
+    showToast('Synthesizing ATS-optimized cover letter...', 'info');
+    const res = await apiFetch('/api/cover-letter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        company_name: comp,
+        job_title: title,
+        job_description: desc,
+        profile_id: pid
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed');
+    document.getElementById('clOutputText').value = data.cover_letter;
+    showToast('Tailored cover letter generated!', 'success');
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -554,7 +635,7 @@ async function saveScheduleSettings() {
   const timeVal = document.getElementById('schedTimeInput').value;
 
   try {
-    const res = await fetch('/api/config');
+    const res = await apiFetch('/api/config');
     const conf = await res.json();
     conf.schedule = {
       enabled: mode === 'daily',
@@ -562,7 +643,7 @@ async function saveScheduleSettings() {
       daily_time: timeVal
     };
 
-    const putRes = await fetch('/api/config', {
+    const putRes = await apiFetch('/api/config', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(conf)

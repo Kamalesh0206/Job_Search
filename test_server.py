@@ -42,10 +42,61 @@ def test_endpoints():
         "profile_id": "AI_ENGINEER"
     })
     assert r6.status_code == 200
-    print("  [PASS] Cover letter generation API works:", len(r6.json().get('cover_letter', '')) > 200)
+    print("\n--- 5. Testing /health and /api/health ---")
+    r_health = client.get('/health')
+    assert r_health.status_code == 200, f"Health check failed: {r_health.status_code}"
+    h_data = r_health.json()
+    assert h_data['status'] == 'ok'
+    assert h_data['database'] == 'healthy'
+    assert h_data['total_jobs_stored'] >= 200
+    print("  [PASS] Health check returns status 'ok', DB 'healthy', jobs count:", h_data['total_jobs_stored'])
+
+    print("\n--- 6. Testing /api/schedule ---")
+    r_sched = client.get('/api/schedule')
+    assert r_sched.status_code == 200
+    s_data = r_sched.json()
+    print("  [PASS] Schedule status retrieved:", s_data.get('interval_hours'), "hours")
+
+    print("\n--- 7. Testing /api/export/excel ---")
+    r_excel = client.get('/api/export/excel')
+    assert r_excel.status_code == 200
+    assert len(r_excel.content) > 1000
+    print(f"  [PASS] Excel export returned valid spreadsheet ({len(r_excel.content)} bytes)")
+
+    print("\n--- 8. Testing Authentication Security Flow ---")
+    # Temporarily enable auth
+    server.AUTH_REQUIRED = True
+    server.DASHBOARD_USERNAME = "testadmin"
+    server.DASHBOARD_PASSWORD = "secretpassword123"
+
+    # Unauthorized request should receive 401
+    r_unauth = client.get('/api/stats')
+    assert r_unauth.status_code == 401, f"Expected 401, got {r_unauth.status_code}"
+    print("  [PASS] Unauthenticated request blocked with 401 Unauthorized")
+
+    # Health check remains public
+    r_pub_health = client.get('/health')
+    assert r_pub_health.status_code == 200
+    print("  [PASS] Health check remains publicly accessible without auth")
+
+    # Login endpoint generates token
+    r_login = client.post('/api/auth/login', json={"username": "testadmin", "password": "secretpassword123"})
+    assert r_login.status_code == 200
+    token = r_login.json()['token']
+    assert len(token) > 10
+    print("  [PASS] Valid login generates token:", token[:8] + "...")
+
+    # Authenticated request with Bearer token succeeds
+    r_authed = client.get('/api/stats', headers={"Authorization": f"Bearer {token}"})
+    assert r_authed.status_code == 200
+    print("  [PASS] Authenticated request with Bearer token succeeds (200 OK)")
+
+    # Reset auth state for local dev
+    server.AUTH_REQUIRED = False
+    server.DASHBOARD_PASSWORD = ""
 
     print("\n==========================================")
-    print("  ALL API ENDPOINTS TESTED SUCCESSFULLY!  ")
+    print("  ALL 8 API & SECURITY TESTS PASSED!     ")
     print("==========================================")
 
 if __name__ == "__main__":

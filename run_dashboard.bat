@@ -6,13 +6,12 @@ echo   Candidate: Kamalesan C (7.4y Experience)
 echo   Profiles: [AI Engineer] ^& [Automotive Test Engineer]
 echo ====================================================================
 echo.
-echo   Host Name Access URLs:
-echo     - http://%COMPUTERNAME%:8000  (Active Windows Host Name)
-echo     - http://jobagent.local:8000 (Custom Host Alias)
+echo   Dashboard Access URLs:
 echo     - http://localhost:8000      (Local Loopback)
+echo     - http://%COMPUTERNAME%:8000  (Local Network Host Name)
 echo.
-echo Launching server at http://%COMPUTERNAME%:8000 ...
+echo Launching server at http://localhost:8000 ...
 timeout /t 2 >nul
-start http://%COMPUTERNAME%:8000
+start http://localhost:8000
 python server.py
 pause

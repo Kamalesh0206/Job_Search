@@ -1,0 +1,16 @@
+__pycache__
+*.py[cod]
+*$py.class
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+data/*.db
+data/*.sqlite*
+logs/*.log
+*.backup.*
+* - Copy.*
+*.tmp
+*.bat
+dashboard_preview.png

@@ -14,6 +14,7 @@ from excel_writer import (
     load_all_jobs,
     update_job_last_seen
 )
+import database
 from utils import fingerprint, company_title_fingerprint, canonical_url
 from sources.remotive import collect as collect_remotive
 from sources.arbeitnow import collect as collect_arbeitnow
@@ -125,9 +126,10 @@ def run_job_search(target_profile: Optional[str] = None) -> Dict[str, Any]:
 
     print(f"\nTotal raw vacancies discovered across all sources: {len(all_discovered)}")
 
-    # Load existing tracker state for deduplication
-    existing_fps = load_existing_fingerprints(EXCEL_PATH)
-    existing_jobs = load_all_jobs(EXCEL_PATH)
+    # Load existing database state for deduplication
+    database.init_db()
+    existing_fps = database.get_existing_fingerprints()
+    existing_jobs = database.get_all_jobs()
     existing_urls = {canonical_url(j.get("url", "")) for j in existing_jobs if j.get("url")}
     existing_cross = {company_title_fingerprint(j.get("company", ""), j.get("title", "")) for j in existing_jobs}
 
@@ -149,6 +151,7 @@ def run_job_search(target_profile: Optional[str] = None) -> Dict[str, Any]:
         if fp in existing_fps or (canon_url and canon_url in existing_urls) or cross_fp in existing_cross:
             duplicate_count += 1
             # Update last-seen timestamp on existing entry
+            database.update_last_seen_db([fp], today)
             update_job_last_seen(EXCEL_PATH, fp, today)
             updated_last_seen += 1
             continue
@@ -229,7 +232,12 @@ def run_job_search(target_profile: Optional[str] = None) -> Dict[str, Any]:
 
     added_count = 0
     if new_relevant_rows:
-        added_count = append_jobs(EXCEL_PATH, new_relevant_rows)
+        added_count = database.save_jobs_to_db(new_relevant_rows)
+        # Also ensure append_jobs in excel for backwards compatibility if needed
+        try:
+            append_jobs(EXCEL_PATH, new_relevant_rows)
+        except Exception:
+            pass
 
     end_time = datetime.now()
     duration = (end_time - start_time).total_seconds()
@@ -246,6 +254,15 @@ def run_job_search(target_profile: Optional[str] = None) -> Dict[str, Any]:
         "duration_seconds": round(duration, 2),
         "excel_path": str(EXCEL_PATH)
     }
+
+    database.record_search_log(
+        active_profile,
+        "completed",
+        len(all_discovered),
+        added_count,
+        duplicate_count,
+        summary
+    )
 
     print("\n---------------- SEARCH SUMMARY ----------------")
     print(f"Total Discovered: {summary['total_discovered']}")

@@ -3,29 +3,29 @@ import sys
 import json
 import asyncio
 import logging
-import threading
+import base64
+import secrets
 from pathlib import Path
+from datetime import datetime
 from typing import Optional, List, Dict, Any
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Request, Depends, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 
 # Local modules
 from profile_manager import ProfileManager
 from cover_letter_generator import CoverLetterGenerator
 from recruiter_outreach import RecruiterOutreach
-from excel_writer import (
-    load_all_jobs,
-    update_job_status,
-    update_job_application,
-    migrate_if_needed
-)
 from apply_engine import run_apply
 from main import run_job_search
 from generate_resume_pdf import get_resume_path_for_profile
+from scheduler import scheduler_instance
+import database
 
 ROOT = Path(__file__).resolve().parent
 STATIC_DIR = ROOT / "static"
@@ -33,17 +33,80 @@ EXCEL_PATH = ROOT / "Job_Search_Tracker.xlsx"
 CONFIG_PATH = ROOT / "config.json"
 USER_PROFILE_PATH = ROOT / "user_profile.json"
 LOG_DIR = ROOT / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+logger = logging.getLogger("server")
+
+# Security configuration
+DASHBOARD_USERNAME = os.environ.get("DASHBOARD_USERNAME", "").strip()
+DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "").strip()
+AUTH_REQUIRED = bool(DASHBOARD_PASSWORD)
+
+# In-memory session tokens for authenticated dashboard sessions
+active_tokens = set()
+
+security_basic = HTTPBasic(auto_error=False)
+
+def verify_authentication(request: Request, credentials: Optional[HTTPBasicCredentials] = Depends(security_basic)):
+    if not AUTH_REQUIRED:
+        return True
+
+    # 1. Check Bearer / custom token header
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+        if token in active_tokens:
+            return True
+
+    # 2. Check HTTP Basic credentials
+    if credentials:
+        user_match = secrets.compare_digest(credentials.username, DASHBOARD_USERNAME or "admin")
+        pass_match = secrets.compare_digest(credentials.password, DASHBOARD_PASSWORD)
+        if user_match and pass_match:
+            return True
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Unauthorized: Authentication required to access private application records.",
+        headers={"WWW-Authenticate": "Basic"}
+    )
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("Initializing persistent database layer...")
+    database.init_db()
+    logger.info("Starting background cloud job search scheduler...")
+    scheduler_instance.start()
+    yield
+    # Shutdown
+    logger.info("Stopping background cloud scheduler...")
+    scheduler_instance.stop()
 
 app = FastAPI(
     title="Dual-Role AI Job Search and Application Automation Agent",
-    description="Dual Profile System for AI Engineer and Automotive Test Engineer",
-    version="2.0.0"
+    description="Cloud-Ready Dual Profile System for AI Engineer and Automotive Test Engineer",
+    version="2.1.0",
+    lifespan=lifespan
 )
+
+# Dynamic CORS configuration
+cors_origins_env = os.environ.get("CORS_ORIGINS", "").strip()
+if cors_origins_env and cors_origins_env != "*":
+    allow_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+    allow_credentials = True
+else:
+    allow_origins = ["*"]
+    allow_credentials = False
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=allow_origins,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -69,7 +132,7 @@ class ApplyRequest(BaseModel):
     company_name: Optional[str] = "Target Company"
     job_description: Optional[str] = ""
     profile_id: Optional[str] = "AI_ENGINEER"
-    headless: Optional[bool] = False
+    headless: Optional[bool] = None
     dry_run: Optional[bool] = True
     auto_submit: Optional[bool] = False
     explicit_approval: Optional[bool] = False
@@ -88,8 +151,11 @@ class OutreachRequest(BaseModel):
 
 class ScheduleUpdateRequest(BaseModel):
     enabled: bool
-    mode: Optional[str] = "manual"
-    daily_time: Optional[str] = "09:00"
+    interval_hours: Optional[float] = 12.0
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 # ----------------- Helper Functions -----------------
 def load_config() -> Dict[str, Any]:
@@ -102,66 +168,69 @@ def save_config(data: Dict[str, Any]):
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
-def calculate_profile_stats(jobs: List[Dict[str, Any]], profile_filter: Optional[str] = None) -> Dict[str, Any]:
-    if profile_filter and profile_filter != "ALL":
-        target = profile_filter.upper()
-        # Include BOTH in either profile count
-        filtered = [j for j in jobs if j.get("profile_id", "").upper() == target or j.get("role_category", "").upper() == "BOTH"]
-    else:
-        filtered = jobs
+# ----------------- Health & Auth Endpoints -----------------
 
-    total = len(filtered)
-    relevant = sum(1 for j in filtered if int(j.get("relevance_score", 0)) >= 60)
-    confirmed_sponsorship = sum(1 for j in filtered if j.get("visa_sponsorship_status", "").upper() == "CONFIRMED")
-    remote_jobs = sum(1 for j in filtered if "remote" in j.get("work_arrangement", "").lower())
-    applied = sum(1 for j in filtered if j.get("status", "").upper() == "APPLIED")
-    interviews = sum(1 for j in filtered if j.get("status", "").upper() == "INTERVIEW")
-    rejections = sum(1 for j in filtered if j.get("status", "").upper() == "REJECTED")
-    ready_for_review = sum(1 for j in filtered if j.get("status", "").upper() == "READY_FOR_REVIEW")
-    approved = sum(1 for j in filtered if j.get("status", "").upper() == "APPROVED")
+@app.get("/health")
+@app.get("/api/health")
+def health_check():
+    db_status = "healthy"
+    job_count = 0
+    try:
+        all_jobs = database.get_all_jobs(limit=1)
+        # Check total count
+        job_count = len(database.get_all_jobs())
+    except Exception as e:
+        db_status = f"unhealthy: {e}"
 
     return {
-        "total_jobs": total,
-        "relevant_jobs": relevant,
-        "confirmed_sponsorship": confirmed_sponsorship,
-        "remote_jobs": remote_jobs,
-        "applications_submitted": applied,
-        "interviews": interviews,
-        "rejections": rejections,
-        "ready_for_review": ready_for_review,
-        "approved": approved
+        "status": "ok" if db_status == "healthy" else "degraded",
+        "timestamp": datetime.now().isoformat(),
+        "database": db_status,
+        "total_jobs_stored": job_count,
+        "scheduler": scheduler_instance.get_status(),
+        "active_profiles": ["AI_ENGINEER", "TEST_ENGINEER"],
+        "auth_required": AUTH_REQUIRED,
+        "environment": os.environ.get("ENVIRONMENT", "production" if os.environ.get("PORT") else "development"),
+        "version": "2.1.0"
     }
 
-# ----------------- API Endpoints -----------------
+@app.get("/api/auth/status")
+def auth_status(request: Request):
+    if not AUTH_REQUIRED:
+        return {"auth_required": False, "authenticated": True}
+
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        tok = auth_header.split(" ", 1)[1].strip()
+        if tok in active_tokens:
+            return {"auth_required": True, "authenticated": True}
+
+    return {"auth_required": True, "authenticated": False}
+
+@app.post("/api/auth/login")
+def auth_login(req: LoginRequest):
+    if not AUTH_REQUIRED:
+        return {"success": True, "token": "open_access"}
+
+    user_match = secrets.compare_digest(req.username, DASHBOARD_USERNAME or "admin")
+    pass_match = secrets.compare_digest(req.password, DASHBOARD_PASSWORD)
+
+    if user_match and pass_match:
+        token = secrets.token_hex(24)
+        active_tokens.add(token)
+        return {"success": True, "token": token, "username": req.username}
+
+    raise HTTPException(status_code=401, detail="Invalid username or password")
+
+# ----------------- Protected API Endpoints -----------------
 
 @app.get("/api/stats")
-def get_stats(profile: Optional[str] = Query("ALL")):
-    migrate_if_needed(EXCEL_PATH)
-    all_jobs = load_all_jobs(EXCEL_PATH)
-
-    ai_stats = calculate_profile_stats(all_jobs, "AI_ENGINEER")
-    test_stats = calculate_profile_stats(all_jobs, "TEST_ENGINEER")
-    overall_stats = calculate_profile_stats(all_jobs, "ALL")
-
-    active_stats = overall_stats
-    if profile == "AI_ENGINEER":
-        active_stats = ai_stats
-    elif profile == "TEST_ENGINEER":
-        active_stats = test_stats
-
-    # Available countries list for filter dropdown
-    countries = sorted(list({j.get("country", "").strip() for j in all_jobs if j.get("country", "").strip()}))
-
-    return {
-        "profile_selected": profile,
-        "stats": active_stats,
-        "ai_engineer": ai_stats,
-        "test_engineer": test_stats,
-        "all_profiles": overall_stats,
-        "available_countries": countries,
-        "search_task": task_states["search"],
-        "apply_task": task_states["apply"]
-    }
+def get_stats(profile: Optional[str] = Query("ALL"), _: bool = Depends(verify_authentication)):
+    stats_data = database.get_stats_db(profile)
+    stats_data["search_task"] = task_states["search"]
+    stats_data["apply_task"] = task_states["apply"]
+    stats_data["scheduler"] = scheduler_instance.get_status()
+    return stats_data
 
 @app.get("/api/jobs")
 def get_jobs(
@@ -172,86 +241,52 @@ def get_jobs(
     sponsorship: Optional[str] = Query(None),
     min_score: Optional[int] = Query(None),
     search: Optional[str] = Query(None),
-    limit: Optional[int] = Query(500)
+    limit: Optional[int] = Query(500),
+    _: bool = Depends(verify_authentication)
 ):
-    migrate_if_needed(EXCEL_PATH)
-    jobs = load_all_jobs(EXCEL_PATH)
+    jobs = database.get_all_jobs(
+        profile_id=profile,
+        status=status,
+        country=country,
+        work_arrangement=work_arrangement,
+        sponsorship=sponsorship,
+        min_score=min_score,
+        search=search,
+        limit=limit
+    )
 
-    # 1. Filter by profile
-    if profile and profile != "ALL":
-        p_up = profile.upper()
-        jobs = [j for j in jobs if j.get("profile_id", "").upper() == p_up or j.get("role_category", "").upper() == "BOTH"]
-
-    # 2. Filter by status
-    if status and status != "All":
-        s_up = status.upper()
-        jobs = [j for j in jobs if j.get("status", "").upper() == s_up]
-
-    # 3. Filter by country
-    if country and country != "All":
-        c_low = country.lower()
-        jobs = [j for j in jobs if c_low in j.get("country", "").lower()]
-
-    # 4. Filter by work arrangement
-    if work_arrangement and work_arrangement != "All":
-        w_low = work_arrangement.lower()
-        jobs = [j for j in jobs if w_low in j.get("work_arrangement", "").lower()]
-
-    # 5. Filter by sponsorship
-    if sponsorship and sponsorship != "All":
-        spon_up = sponsorship.upper()
-        jobs = [j for j in jobs if j.get("visa_sponsorship_status", "").upper() == spon_up]
-
-    # 6. Filter by min score
-    if min_score is not None and min_score > 0:
-        jobs = [j for j in jobs if int(j.get("relevance_score", 0)) >= min_score]
-
-    # 7. Search text
-    if search:
-        s_lower = search.lower().strip()
-        jobs = [
-            j for j in jobs if (
-                s_lower in j.get("title", "").lower() or
-                s_lower in j.get("company", "").lower() or
-                s_lower in j.get("country", "").lower() or
-                s_lower in j.get("matched_skills", "").lower()
-            )
-        ]
-
-    # Sort reverse chronological by Found Date, then score
-    jobs.sort(key=lambda x: (x.get("found_date", ""), int(x.get("relevance_score", 0))), reverse=True)
+    total_unfiltered = len(database.get_all_jobs())
 
     return {
         "count": len(jobs),
-        "total_unfiltered": len(load_all_jobs(EXCEL_PATH)),
-        "jobs": jobs[:limit]
+        "total_unfiltered": total_unfiltered,
+        "jobs": jobs
     }
 
 @app.patch("/api/jobs/{job_id}/status")
-def patch_job_status(job_id: str, req: StatusUpdateRequest):
-    success = update_job_status(EXCEL_PATH, job_id, req.status, notes=req.notes)
+def patch_job_status(job_id: str, req: StatusUpdateRequest, _: bool = Depends(verify_authentication)):
+    success = database.update_job_status_db(job_id, req.status, notes=req.notes)
     if not success:
-        raise HTTPException(status_code=404, detail=f"Job {job_id} not found in Excel tracker")
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     return {"success": True, "job_id": job_id, "new_status": req.status}
 
 @app.post("/api/jobs/{job_id}/approve")
-def approve_job(job_id: str):
-    success = update_job_status(EXCEL_PATH, job_id, "APPROVED", notes="Approved by candidate for application submission")
+def approve_job(job_id: str, _: bool = Depends(verify_authentication)):
+    success = database.update_job_status_db(job_id, "APPROVED", notes="Approved by candidate for application submission")
     if not success:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     return {"success": True, "job_id": job_id, "status": "APPROVED", "message": "Job approved for submission"}
 
 @app.post("/api/jobs/{job_id}/reject")
-def reject_job(job_id: str):
-    success = update_job_status(EXCEL_PATH, job_id, "REJECTED", notes="Rejected by user")
+def reject_job(job_id: str, _: bool = Depends(verify_authentication)):
+    success = database.update_job_status_db(job_id, "REJECTED", notes="Rejected by user")
     if not success:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     return {"success": True, "job_id": job_id, "status": "REJECTED", "message": "Job marked as rejected"}
 
 @app.post("/api/jobs/{job_id}/generate-documents")
-def generate_job_documents(job_id: str):
-    jobs = load_all_jobs(EXCEL_PATH)
-    target = next((j for j in jobs if str(j.get("id")) == str(job_id)), None)
+def generate_job_documents(job_id: str, _: bool = Depends(verify_authentication)):
+    target = database.get_job_by_id(job_id)
     if not target:
         raise HTTPException(status_code=404, detail="Job not found")
 
@@ -266,10 +301,8 @@ def generate_job_documents(job_id: str):
     )
 
     resume_p = get_resume_path_for_profile(profile_id, target.get("company", ""))
-    
-    # Update Excel with paths
-    update_job_application(
-        EXCEL_PATH,
+
+    database.update_job_application_db(
         job_id=job_id,
         status=target.get("status", "READY_FOR_REVIEW"),
         resume_used=resume_p.name,
@@ -286,19 +319,16 @@ def generate_job_documents(job_id: str):
     }
 
 @app.get("/api/jobs/{job_id}/cover-letter")
-def get_job_cover_letter(job_id: str):
-    jobs = load_all_jobs(EXCEL_PATH)
-    target = next((j for j in jobs if str(j.get("id")) == str(job_id)), None)
+def get_job_cover_letter(job_id: str, _: bool = Depends(verify_authentication)):
+    target = database.get_job_by_id(job_id)
     if not target:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    # If already generated file exists, read it
     cl_path_str = target.get("cover_letter_path", "")
     if cl_path_str and Path(cl_path_str).exists():
         text = Path(cl_path_str).read_text(encoding="utf-8")
         return {"cover_letter": text, "file_path": cl_path_str}
 
-    # Generate on the fly
     clg = CoverLetterGenerator()
     res = clg.generate(
         job_title=target.get("title", ""),
@@ -310,7 +340,7 @@ def get_job_cover_letter(job_id: str):
     return res
 
 @app.get("/api/resume/{profile_id}")
-def download_role_resume(profile_id: str):
+def download_role_resume(profile_id: str, _: bool = Depends(verify_authentication)):
     resume_path = get_resume_path_for_profile(profile_id)
     if not resume_path.exists():
         raise HTTPException(status_code=404, detail=f"Resume not found for profile {profile_id}")
@@ -321,7 +351,7 @@ def download_role_resume(profile_id: str):
     )
 
 @app.post("/api/cover-letter")
-def generate_custom_cover_letter(req: CoverLetterRequest):
+def generate_custom_cover_letter(req: CoverLetterRequest, _: bool = Depends(verify_authentication)):
     clg = CoverLetterGenerator()
     res = clg.generate(
         job_title=req.job_title,
@@ -333,7 +363,7 @@ def generate_custom_cover_letter(req: CoverLetterRequest):
     return res
 
 @app.post("/api/outreach")
-def generate_outreach_api(req: OutreachRequest):
+def generate_outreach_api(req: OutreachRequest, _: bool = Depends(verify_authentication)):
     ro = RecruiterOutreach()
     recruiter_name = req.recruiter_name or "Hiring Manager"
     company = req.company_name or "Target Company"
@@ -368,7 +398,7 @@ def background_search_worker(profile_target: str):
         task_states["search"]["message"] = f"Search failed: {e}"
 
 @app.post("/api/search")
-def trigger_search(req: SearchTriggerRequest, background_tasks: BackgroundTasks):
+def trigger_search(req: SearchTriggerRequest, background_tasks: BackgroundTasks, _: bool = Depends(verify_authentication)):
     if task_states["search"]["status"] == "running":
         return {"status": "already_running", "message": "A job search is already active in background"}
     background_tasks.add_task(background_search_worker, req.profile or "ALL")
@@ -376,7 +406,12 @@ def trigger_search(req: SearchTriggerRequest, background_tasks: BackgroundTasks)
 
 def background_apply_worker(req: ApplyRequest):
     task_states["apply"]["status"] = "running"
-    task_states["apply"]["message"] = f"Launching Playwright application for {req.job_title} at {req.company_name}..."
+    task_states["apply"]["message"] = f"Launching application assistant for {req.job_title} at {req.company_name}..."
+
+    # In cloud environments without X11/display, force headless = True
+    is_cloud = bool(os.environ.get("PORT") or os.environ.get("ENVIRONMENT") == "production")
+    effective_headless = True if (req.headless is None and is_cloud) else bool(req.headless)
+
     try:
         res = run_apply(
             job_url=req.job_url,
@@ -384,7 +419,7 @@ def background_apply_worker(req: ApplyRequest):
             company_name=req.company_name,
             job_description=req.job_description,
             profile_id=req.profile_id or "AI_ENGINEER",
-            headless=req.headless,
+            headless=effective_headless,
             dry_run=req.dry_run,
             auto_submit=req.auto_submit
         )
@@ -394,20 +429,19 @@ def background_apply_worker(req: ApplyRequest):
 
         if req.job_id:
             new_status = "APPLIED" if res.get("submitted") else "READY_FOR_REVIEW"
-            update_job_status(EXCEL_PATH, req.job_id, new_status, notes=res.get("notes", ""))
+            database.update_job_status_db(req.job_id, new_status, notes=res.get("notes", ""))
     except Exception as e:
         task_states["apply"]["status"] = "error"
         task_states["apply"]["message"] = f"Apply engine failed: {e}"
 
 @app.post("/api/apply")
-def trigger_apply(req: ApplyRequest, background_tasks: BackgroundTasks):
+def trigger_apply(req: ApplyRequest, background_tasks: BackgroundTasks, _: bool = Depends(verify_authentication)):
     if task_states["apply"]["status"] == "running":
         return {"status": "already_running", "message": "An application is currently running"}
 
     # Human-in-the-loop safety verification
     if req.auto_submit and not req.explicit_approval:
-        jobs = load_all_jobs(EXCEL_PATH)
-        target = next((j for j in jobs if str(j.get("id")) == str(req.job_id)), None)
+        target = database.get_job_by_id(req.job_id)
         if target and target.get("status") != "APPROVED":
             raise HTTPException(
                 status_code=400,
@@ -415,12 +449,13 @@ def trigger_apply(req: ApplyRequest, background_tasks: BackgroundTasks):
             )
 
     background_tasks.add_task(background_apply_worker, req)
-    return {"status": "started", "message": f"Application agent started for {req.company_name}"}
+    return {"status": "started", "message": f"Application assistant started for {req.company_name}"}
 
 @app.get("/api/export/excel")
-def export_excel():
+def export_excel(_: bool = Depends(verify_authentication)):
+    database.export_to_excel_file(EXCEL_PATH)
     if not EXCEL_PATH.exists():
-        raise HTTPException(status_code=404, detail="Excel tracker file not found")
+        raise HTTPException(status_code=404, detail="Excel tracker file could not be generated")
     return FileResponse(
         path=str(EXCEL_PATH),
         filename="Job_Search_Tracker.xlsx",
@@ -428,21 +463,21 @@ def export_excel():
     )
 
 @app.get("/api/config")
-def get_config():
+def get_config(_: bool = Depends(verify_authentication)):
     return load_config()
 
 @app.put("/api/config")
-def update_config_api(data: Dict[str, Any]):
+def update_config_api(data: Dict[str, Any], _: bool = Depends(verify_authentication)):
     save_config(data)
     return {"success": True, "message": "Configuration updated"}
 
 @app.get("/api/profile")
-def get_profile_api():
+def get_profile_api(_: bool = Depends(verify_authentication)):
     pm = ProfileManager()
     return pm.data
 
 @app.get("/api/logs")
-def get_logs():
+def get_logs(_: bool = Depends(verify_authentication)):
     logs = {}
     search_log = LOG_DIR / "job_search.log"
     apply_log = LOG_DIR / "job_apply.log"
@@ -452,9 +487,31 @@ def get_logs():
     if apply_log.exists():
         with open(apply_log, "r", encoding="utf-8", errors="ignore") as f:
             logs["apply"] = f.readlines()[-50:]
+
+    logs["search_db_history"] = database.get_search_logs(20)
     return logs
 
-# ----------------- Static Mounting -----------------
+@app.get("/api/schedule")
+def get_schedule(_: bool = Depends(verify_authentication)):
+    return scheduler_instance.get_status()
+
+@app.post("/api/schedule")
+def update_schedule(req: ScheduleUpdateRequest, _: bool = Depends(verify_authentication)):
+    conf = load_config()
+    conf.setdefault("schedule", {})
+    conf["schedule"]["enabled"] = req.enabled
+    conf["schedule"]["interval_hours"] = req.interval_hours
+    save_config(conf)
+    return {"success": True, "scheduler": scheduler_instance.get_status()}
+
+@app.post("/api/schedule/run-now")
+def run_schedule_now(background_tasks: BackgroundTasks, _: bool = Depends(verify_authentication)):
+    if scheduler_instance._is_executing:
+        return {"status": "already_running", "message": "A scheduled job search cycle is already active"}
+    background_tasks.add_task(scheduler_instance.execute_search_cycle)
+    return {"status": "started", "message": "Immediate dual-profile cloud search cycle launched in background."}
+
+# ----------------- Static Mounting & SPA Fallback -----------------
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
@@ -462,18 +519,21 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 def serve_index():
     index_file = STATIC_DIR / "index.html"
     if not index_file.exists():
-        return HTMLResponse("<h1>Dashboard loading...</h1>")
+        return HTMLResponse("<h1>Dual-Role AI Job Search Dashboard loading...</h1>")
     return FileResponse(str(index_file))
 
 if __name__ == "__main__":
     import uvicorn
-    import socket
-    port = 8000
-    host_name = socket.gethostname()
-    print("\n" + "=" * 60)
+    port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST", "0.0.0.0")
+    is_cloud = bool(os.environ.get("PORT"))
+
+    print("\n" + "=" * 65)
     print("  Dual-Role AI Job Search & Application Automation Dashboard")
-    print(f"  System Host Name : http://{host_name}:{port}")
-    print(f"  Custom Host Name : http://jobagent.local:{port}")
-    print(f"  Local Loopback   : http://localhost:{port}")
-    print("=" * 60 + "\n")
-    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=True)
+    print(f"  Mode             : {'Public Cloud Host' if is_cloud else 'Local Development'}")
+    print(f"  Binding Address  : http://{host}:{port}")
+    print(f"  Authentication   : {'Enabled (Protected)' if AUTH_REQUIRED else 'Open (Local)'}")
+    print(f"  Database Storage : {'PostgreSQL' if os.environ.get('DATABASE_URL') else 'SQLite Persistent Volume'}")
+    print("=" * 65 + "\n")
+
+    uvicorn.run("server:app", host=host, port=port, reload=False)

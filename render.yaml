@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: dual-role-job-search-agent
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /health
+    disk:
+      name: agent-persistent-storage
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATA_DIR
+        value: /app/data
+      - key: SCHEDULE_ENABLED
+        value: "true"
+      - key: SCHEDULE_INTERVAL_HOURS
+        value: "12"
+      - key: DASHBOARD_USERNAME
+        value: admin
+      - key: DASHBOARD_PASSWORD
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "*"
