@@ -18,18 +18,20 @@ echo =================================================================
 echo.
 
 set HOSTS_FILE=%SystemRoot%\System32\drivers\etc\hosts
-set HOST_ENTRY=127.0.0.1  jobagent.local
+set HOST_ENTRY1=127.0.0.1  jobagent
+set HOST_ENTRY2=127.0.0.1  jobagent.local
 set HOST_ALIAS=127.0.0.1  ai-agent.local
 
 :: Check if already exists in hosts file
-findstr /i /c:"jobagent.local" "%HOSTS_FILE%" >nul 2>&1
+findstr /i /c:"jobagent" "%HOSTS_FILE%" >nul 2>&1
 if %errorLevel% equ 0 (
-    echo [OK] Host name 'jobagent.local' is already configured in Windows hosts file!
+    echo [OK] Host name 'jobagent' is already configured in Windows hosts file!
 ) else (
-    echo Appending 'jobagent.local' mapping to %HOSTS_FILE% ...
+    echo Appending 'jobagent' and 'jobagent.local' mapping to %HOSTS_FILE% ...
     echo. >> "%HOSTS_FILE%"
     echo # Dual-Role AI Job Search and Application Automation Agent >> "%HOSTS_FILE%"
-    echo %HOST_ENTRY% >> "%HOSTS_FILE%"
+    echo %HOST_ENTRY1% >> "%HOSTS_FILE%"
+    echo %HOST_ENTRY2% >> "%HOSTS_FILE%"
     echo %HOST_ALIAS% >> "%HOSTS_FILE%"
     echo [SUCCESS] Host names added successfully!
 )
