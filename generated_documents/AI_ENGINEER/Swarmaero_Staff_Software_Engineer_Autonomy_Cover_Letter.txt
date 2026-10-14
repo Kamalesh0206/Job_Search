@@ -1,0 +1,16 @@
+Dear Hiring Manager,
+
+I am writing to submit my application for the Staff Software Engineer, Autonomy role at Swarmaero. With 7.4 years of engineering experience spanning Generative AI applications, autonomous AI agent development, and robust Python backend systems, I am excited about the opportunity to contribute to high-impact intelligent software at Swarmaero.
+
+My recent technical focus centers on production Generative AI architectures, including OpenAI and Google Gemini APIs, prompt engineering methodologies, Retrieval-Augmented Generation (RAG) with vector databases, and multi-agent workflow orchestration. I have engineered full-stack AI platforms such as EpiAgent PMO (multi-agent project governance and automated risk triage), an AI-powered test automation solution generating synthetic validation scripts, and autonomous application workflows using FastAPI, PostgreSQL, Docker, and modern React interfaces. This is grounded in a deep software foundation developed at Capgemini and Bosch-partnered environments.
+
+I am eager to apply my experience in building reliable, human-in-the-loop AI systems to solve challenging technical problems and deliver measurable value for Swarmaero.
+
+I am open to worldwide remote positions as well as international relocation with work visa sponsorship.
+
+Thank you for considering my application. I look forward to the chance to speak with your team.
+
+Sincerely,
+Kamalesan C
+AI Engineer | Generative AI, AI Agents & Python Microservices
+Email: kamaleshcai686@gmail.com | Phone: +91 7305131264

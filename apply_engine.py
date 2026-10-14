@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class ApplyEngine:
     def __init__(self, profile_manager: Optional[ProfileManager] = None):
         self.profile = profile_manager or ProfileManager()
-        self.cl_generator = CoverLetterGenerator(self.profile)
+        self.cl_generator = CoverLetterGenerator()
 
         # Order handlers by specificity
         self.handlers = [
@@ -32,14 +32,22 @@ class ApplyEngine:
         job_title: str = "",
         company_name: str = "",
         job_description: str = "",
+        profile_id: str = "AI_ENGINEER",
         headless: bool = False,
         dry_run: bool = True,
         auto_submit: bool = False,
         wait_for_user_seconds: int = 15,
     ) -> Dict[str, Any]:
-        logger.info(f"Starting application run for {job_title} at {company_name} ({job_url})")
+        logger.info(f"Starting application run for {job_title} at {company_name} ({job_url}) [Profile: {profile_id}]")
 
-        cover_letter = self.cl_generator.generate(job_title, company_name, job_description)
+        cl_result = self.cl_generator.generate(
+            job_title=job_title,
+            company_name=company_name,
+            job_description=job_description,
+            profile_id=profile_id,
+            save_to_disk=True
+        )
+        cover_letter_text = cl_result.get("cover_letter", "") if isinstance(cl_result, dict) else str(cl_result)
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(
@@ -70,22 +78,23 @@ class ApplyEngine:
                 logger.info(f"Using handler: {active_handler.__class__.__name__}")
 
                 # Fill form
-                result = await active_handler.fill_form(page, cover_letter=cover_letter)
+                result = await active_handler.fill_form(page, cover_letter=cover_letter_text)
 
                 if auto_submit and not dry_run:
-                    logger.info("Auto-submit enabled. Submitting application form...")
+                    logger.info("Explicit user approval present. Submitting application form...")
                     submitted = await active_handler.submit_form(page)
                     result["submitted"] = submitted
                     await page.wait_for_timeout(3000)
                 else:
-                    logger.info("Dry-run or interactive mode. Skipping auto-submit.")
+                    logger.info("Dry-run or interactive review mode. Skipping auto-submit.")
                     result["submitted"] = False
                     if not headless:
                         logger.info(f"Leaving browser open for {wait_for_user_seconds} seconds for user review...")
                         await page.wait_for_timeout(wait_for_user_seconds * 1000)
 
                 await browser.close()
-                result["status"] = "Applied" if result.get("submitted") else "Processed (Review Required)"
+                result["status"] = "Applied" if result.get("submitted") else "Processed (Ready For Review)"
+                result["cover_letter_path"] = cl_result.get("file_path", "")
                 return result
 
             except Exception as e:
@@ -95,15 +104,26 @@ class ApplyEngine:
                     "success": False,
                     "status": "Failed",
                     "error": str(e),
-                    "notes": f"Application engine failed: {e}",
+                    "notes": f"Application engine error: {e}",
                 }
 
-def run_apply(job_url: str, job_title: str = "", company_name: str = "", headless: bool = False, dry_run: bool = True, auto_submit: bool = False):
+def run_apply(
+    job_url: str,
+    job_title: str = "",
+    company_name: str = "",
+    job_description: str = "",
+    profile_id: str = "AI_ENGINEER",
+    headless: bool = False,
+    dry_run: bool = True,
+    auto_submit: bool = False
+):
     engine = ApplyEngine()
     return asyncio.run(engine.apply(
         job_url=job_url,
         job_title=job_title,
         company_name=company_name,
+        job_description=job_description,
+        profile_id=profile_id,
         headless=headless,
         dry_run=dry_run,
         auto_submit=auto_submit,

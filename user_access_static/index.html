@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AccessHub | Enterprise User Access & Host Management Portal</title>
+  <meta name="description" content="Centralized Enterprise Dashboard for User Access Control, Role Management, and Windows Host System Configuration.">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="mainSidebar">
+      <div class="sidebar-header">
+        <div class="logo-box">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="brand-title">AccessHub</span>
+          <span class="brand-sub">Identity & Host Portal</span>
+        </div>
+      </div>
+
+      <!-- Host Status Widget in Sidebar -->
+      <div class="sidebar-host-widget" id="sidebarHostWidget">
+        <div class="host-pill">
+          <span class="pulse-dot"></span>
+          <span class="host-label">HOST SYSTEM</span>
+        </div>
+        <div class="host-name-display" id="sidebarHostName">Kamalesh</div>
+        <div class="host-meta" id="sidebarHostIp">192.168.0.134:8080</div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="overview" id="navTabOverview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          <span>Dashboard Overview</span>
+        </button>
+
+        <button class="nav-item" data-tab="users" id="navTabUsers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span>User Access & Directory</span>
+          <span class="badge" id="navUserCount">6</span>
+        </button>
+
+        <button class="nav-item" data-tab="host" id="navTabHost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          <span>Host & System Name</span>
+          <span class="badge-accent">CONFIG</span>
+        </button>
+
+        <button class="nav-item" data-tab="roles" id="navTabRoles">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span>Roles & Permissions</span>
+        </button>
+
+        <button class="nav-item" data-tab="audit" id="navTabAudit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <span>Security Audit Log</span>
+        </button>
+
+        <button class="nav-item" data-tab="tokens" id="navTabTokens">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>API Access Keys</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-badge">
+          <div class="avatar" style="background-color: #6366f1;">KC</div>
+          <div class="profile-meta">
+            <span class="user-name">Kamalesan C</span>
+            <span class="user-role">Super Admin</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+      <!-- Top Navigation Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title" id="pageMainHeading">User Access & Host Management Dashboard</h1>
+        </div>
+        <div class="topbar-right">
+          <!-- Live Host Tag -->
+          <div class="host-quick-tag" id="quickHostTag" title="Click to configure Host Name">
+            <span class="status-indicator online"></span>
+            <span class="tag-title">HOST:</span>
+            <strong class="tag-value" id="topHostValue">Kamalesh</strong>
+          </div>
+
+          <button class="btn btn-secondary" id="btnTopChangeHost" title="Modify System Host Name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <span>Change Host Name</span>
+          </button>
+
+          <button class="btn btn-primary" id="btnTopAddUser">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Add New User</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dynamic Tab Views -->
+      <div class="content-body">
+        
+        <!-- ================= TAB 1: OVERVIEW ================= -->
+        <section class="tab-pane active" id="paneOverview">
+          <!-- Metric Cards -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Total Users</span>
+                <div class="metric-value" id="statTotalUsers">6</div>
+                <span class="metric-hint positive">All configured accounts</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-cyan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Active Access</span>
+                <div class="metric-value" id="statActiveUsers">5</div>
+                <span class="metric-hint positive">83% Access Health</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-amber">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                  <line x1="6" y1="6" x2="6.01" y2="6"/>
+                  <line x1="6" y1="18" x2="6.01" y2="18"/>
+                </svg>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">System Host Name</span>
+                <div class="metric-value monospace" id="statHostName">Kamalesh</div>
+                <span class="metric-hint" id="statHostIp">192.168.0.134</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-emerald">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">System Uptime</span>
+                <div class="metric-value" id="statUptime">Online</div>
+                <span class="metric-hint">Windows 11 (KB5129195)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Highlight Banner for Host & System -->
+          <div class="system-hero-card">
+            <div class="hero-left">
+              <div class="hero-badge">WINDOWS SYSTEM INTEGRATION</div>
+              <h2 class="hero-title">Host Machine: <span class="highlight-text" id="heroHostName">Kamalesh</span></h2>
+              <p class="hero-desc">
+                This dashboard manages local user authentication, access control policies, and system host configuration. 
+                You can directly rename your computer host name or generate elevated administrative scripts below.
+              </p>
+              <div class="hero-actions">
+                <button class="btn btn-primary" id="btnHeroRename">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                  </svg>
+                  <span>Rename Host Machine</span>
+                </button>
+                <button class="btn btn-secondary" id="btnHeroViewAudit">
+                  <span>View Security Activity</span>
+                </button>
+              </div>
+            </div>
+            <div class="hero-right">
+              <div class="telemetry-box">
+                <div class="telemetry-row">
+                  <span class="telemetry-label">OS Version:</span>
+                  <span class="telemetry-value" id="heroOsVersion">Windows 11</span>
+                </div>
+                <div class="telemetry-row">
+                  <span class="telemetry-label">Logged Account:</span>
+                  <span class="telemetry-value" id="heroLoggedUser">softk (Kamalesan C)</span>
+                </div>
+                <div class="telemetry-row">
+                  <span class="telemetry-label">Latest HotFix:</span>
+                  <span class="telemetry-value" id="heroLastUpdate">KB5129195 (05-10-2026)</span>
+                </div>
+                <div class="telemetry-row">
+                  <span class="telemetry-label">Network URL:</span>
+                  <span class="telemetry-value monospace" id="heroNetworkUrl">http://Kamalesh:8080</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Access Section Grid -->
+          <div class="overview-grid">
+            <!-- Active Users Preview -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Recent User Access</h3>
+                  <p class="panel-sub">Active members with authorized system roles</p>
+                </div>
+                <button class="btn-link" id="btnOverviewSeeAllUsers">View All &rarr;</button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Last Login</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overviewUsersTableBody">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Recent Security Audit Logs -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">System Audit Activity</h3>
+                  <p class="panel-sub">Real-time log of security events and host operations</p>
+                </div>
+                <button class="btn-link" id="btnOverviewSeeAllAudit">Full Log &rarr;</button>
+              </div>
+              <div class="audit-list-mini" id="overviewAuditList">
+                <!-- Dynamic Log Items -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 2: USER DIRECTORY ================= -->
+        <section class="tab-pane" id="paneUsers">
+          <div class="panel-card">
+            <!-- Search & Filters Toolbar -->
+            <div class="toolbar">
+              <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="userSearchInput" placeholder="Search by name, username, or email..." class="search-input">
+              </div>
+
+              <div class="filters-group">
+                <select id="userRoleFilter" class="select-filter">
+                  <option value="All">All Roles</option>
+                  <option value="Super Admin">Super Admin</option>
+                  <option value="Infrastructure Admin">Infrastructure Admin</option>
+                  <option value="DevOps Engineer">DevOps Engineer</option>
+                  <option value="Security Auditor">Security Auditor</option>
+                  <option value="Application Operator">Application Operator</option>
+                  <option value="Viewer">Viewer</option>
+                </select>
+
+                <select id="userStatusFilter" class="select-filter">
+                  <option value="All">All Statuses</option>
+                  <option value="Active">Active</option>
+                  <option value="Suspended">Suspended</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+
+                <button class="btn btn-primary" id="btnCreateUserModal">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  <span>New User</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Main Users Data Table -->
+            <div class="table-responsive">
+              <table class="data-table" id="usersTable">
+                <thead>
+                  <tr>
+                    <th>User Identity</th>
+                    <th>Email Address</th>
+                    <th>Department</th>
+                    <th>Role</th>
+                    <th>2FA Security</th>
+                    <th>Status</th>
+                    <th>Last Active</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-footer">
+              <span class="table-count" id="usersTableCount">Showing 6 users</span>
+              <button class="btn btn-secondary btn-sm" id="btnExportUsersJson">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Export Users</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 3: HOST & SYSTEM NAME ================= -->
+        <section class="tab-pane" id="paneHost">
+          <div class="host-management-container">
+            
+            <!-- System Telemetry Overview -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Windows Host Telemetry</h3>
+                  <p class="panel-sub">Hardware & network endpoint details for the local system</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btnRefreshHostInfo">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                  </svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              <div class="telemetry-grid">
+                <div class="telemetry-card">
+                  <div class="telemetry-card-title">CURRENT HOST NAME</div>
+                  <div class="telemetry-card-value text-accent" id="hostDetailName">Kamalesh</div>
+                  <div class="telemetry-card-sub">Active Socket Host Identifier</div>
+                </div>
+
+                <div class="telemetry-card">
+                  <div class="telemetry-card-title">COMPUTER NAME (ENV)</div>
+                  <div class="telemetry-card-value" id="hostDetailComputer">KAMALESH</div>
+                  <div class="telemetry-card-sub">Windows NetBIOS Name</div>
+                </div>
+
+                <div class="telemetry-card">
+                  <div class="telemetry-card-title">LOCAL IP ADDRESSES</div>
+                  <div class="telemetry-card-value monospace" id="hostDetailIps">192.168.0.134</div>
+                  <div class="telemetry-card-sub">Ethernet / Wi-Fi Adapter</div>
+                </div>
+
+                <div class="telemetry-card">
+                  <div class="telemetry-card-title">OPERATING SYSTEM</div>
+                  <div class="telemetry-card-value" id="hostDetailOs">Windows 11</div>
+                  <div class="telemetry-card-sub" id="hostDetailArch">x86_64 Architecture</div>
+                </div>
+
+                <div class="telemetry-card">
+                  <div class="telemetry-card-title">LAST OS UPDATE</div>
+                  <div class="telemetry-card-value text-emerald" id="hostDetailLastUpdate">KB5129195</div>
+                  <div class="telemetry-card-sub">Installed on 05-10-2026</div>
+                </div>
+
+                <div class="telemetry-card">
+                  <div class="telemetry-card-title">PRIVILEGE STATUS</div>
+                  <div class="telemetry-card-value" id="hostDetailAdminStatus">User Context</div>
+                  <div class="telemetry-card-sub">Elevation available on-demand</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CHANGE HOST NAME ENGINE -->
+            <div class="panel-card highlight-border">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Create / Change Host Name</h3>
+                  <p class="panel-sub">Rename this computer's network host identifier with live validation and elevation</p>
+                </div>
+                <span class="badge-accent">WINDOWS CORE CONFIG</span>
+              </div>
+
+              <div class="hostname-form-wrap">
+                <div class="input-form-grid">
+                  <div class="form-group">
+                    <label for="newHostnameInput" class="form-label">
+                      <span>New Computer Host Name</span>
+                      <span class="char-count" id="hostnameCharCount">0 / 15 chars</span>
+                    </label>
+                    <div class="input-with-icon">
+                      <input 
+                        type="text" 
+                        id="newHostnameInput" 
+                        placeholder="e.g. KAMALESH-AI, DEV-WORKSTATION" 
+                        maxlength="15"
+                        autocomplete="off"
+                        class="form-control monospace-input"
+                      >
+                      <button type="button" class="btn btn-secondary btn-inline" id="btnValidateHostname">Validate</button>
+                    </div>
+                    <div class="validation-message" id="hostnameValidationMsg"></div>
+                    <p class="form-help">
+                      <strong>Rules:</strong> Max 15 characters, alphanumeric & hyphens only. Cannot start or end with a hyphen.
+                    </p>
+                  </div>
+
+                  <!-- Hostname Live Preview Card -->
+                  <div class="host-preview-card">
+                    <div class="preview-title">NETWORK ACCESS PREVIEW</div>
+                    <div class="preview-content">
+                      <div class="preview-line">
+                        <span class="preview-label">Local Access:</span>
+                        <code class="preview-code" id="previewLocalUrl">http://localhost:8080</code>
+                      </div>
+                      <div class="preview-line">
+                        <span class="preview-label">LAN Host URL:</span>
+                        <code class="preview-code text-cyan" id="previewLanUrl">http://[NEW_HOSTNAME]:8080</code>
+                      </div>
+                      <div class="preview-line">
+                        <span class="preview-label">NetBIOS Resolution:</span>
+                        <code class="preview-code text-amber" id="previewNetBios">\\[NEW_HOSTNAME]</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Execution Buttons -->
+                <div class="host-action-bar">
+                  <button class="btn btn-primary btn-lg" id="btnApplyElevation">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <span>Apply Host Name via Windows UAC</span>
+                  </button>
+
+                  <button class="btn btn-secondary" id="btnShowScriptCommands">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                      <polyline points="4 17 10 11 4 5"/>
+                      <line x1="12" y1="19" x2="20" y2="19"/>
+                    </svg>
+                    <span>View PowerShell & CMD Commands</span>
+                  </button>
+                </div>
+
+                <!-- Elevation Result / Command Drawer -->
+                <div class="commands-drawer" id="commandsDrawer" style="display: none;">
+                  <div class="drawer-header">
+                    <h4>Direct Windows Commands for Administrator Execution</h4>
+                    <button class="btn-close" id="btnCloseCommandsDrawer">&times;</button>
+                  </div>
+
+                  <div class="command-box">
+                    <div class="command-box-header">
+                      <span>PowerShell (Run as Administrator)</span>
+                      <button class="btn btn-xs btn-outline" id="btnCopyPsCommand">Copy Command</button>
+                    </div>
+                    <pre><code id="codePsCommand">Rename-Computer -NewName "NEW-NAME" -Force -Restart:$false</code></pre>
+                  </div>
+
+                  <div class="command-box">
+                    <div class="command-box-header">
+                      <span>Command Prompt (CMD Administrator)</span>
+                      <button class="btn btn-xs btn-outline" id="btnCopyCmdCommand">Copy Command</button>
+                    </div>
+                    <pre><code id="codeCmdCommand">wmic computersystem where caption='%COMPUTERNAME%' rename NEW-NAME</code></pre>
+                  </div>
+
+                  <div class="alert alert-info">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="alert-icon">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="16" x2="12" y2="12"/>
+                      <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <div>
+                      <strong>System Reboot Note:</strong> After running either command, Windows queues the name change. 
+                      A computer restart is required before local network devices resolve the new host name.
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ================= TAB 4: ROLES & PERMISSIONS ================= -->
+        <section class="tab-pane" id="paneRoles">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Role-Based Access Control (RBAC) Matrix</h3>
+                <p class="panel-sub">Fine-grained permission assignments across security tiers</p>
+              </div>
+            </div>
+
+            <div class="roles-grid" id="rolesCardsGrid">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 5: AUDIT LOG ================= -->
+        <section class="tab-pane" id="paneAudit">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Security & System Audit Log</h3>
+                <p class="panel-sub">Immutable audit trail of access events, logins, and host configurations</p>
+              </div>
+              <div class="audit-filters">
+                <input type="text" id="auditSearchInput" placeholder="Filter logs by user, action, IP..." class="search-input">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Actor / User</th>
+                    <th>Action</th>
+                    <th>Target / Resource</th>
+                    <th>Client IP</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="auditTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 6: API TOKENS ================= -->
+        <section class="tab-pane" id="paneTokens">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Service Account & Automation Tokens</h3>
+                <p class="panel-sub">Secure API keys for background agents, job automation, and CI/CD</p>
+              </div>
+              <button class="btn btn-primary" id="btnNewTokenModal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Generate API Key</span>
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Token Name</th>
+                    <th>Key Prefix</th>
+                    <th>Assigned Role</th>
+                    <th>Created On</th>
+                    <th>Last Active</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tokensTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= MODAL: ADD / EDIT USER ================= -->
+  <div class="modal-overlay" id="userModalOverlay" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="userModalTitle">Add New User</h3>
+        <button class="modal-close" id="btnCloseUserModal">&times;</button>
+      </div>
+      <form id="userForm">
+        <input type="hidden" id="formUserId">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="formUsername" class="form-label">Username *</label>
+              <input type="text" id="formUsername" required class="form-control" placeholder="e.g. jdoe">
+            </div>
+            <div class="form-group flex-1">
+              <label for="formFullName" class="form-label">Full Name *</label>
+              <input type="text" id="formFullName" required class="form-control" placeholder="e.g. John Doe">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="formEmail" class="form-label">Email Address *</label>
+            <input type="email" id="formEmail" required class="form-control" placeholder="e.g. john@system.local">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="formRole" class="form-label">Access Role *</label>
+              <select id="formRole" class="form-control" required>
+                <option value="Super Admin">Super Admin</option>
+                <option value="Infrastructure Admin">Infrastructure Admin</option>
+                <option value="DevOps Engineer">DevOps Engineer</option>
+                <option value="Security Auditor">Security Auditor</option>
+                <option value="Application Operator">Application Operator</option>
+                <option value="Viewer">Viewer</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label for="formDepartment" class="form-label">Department</label>
+              <input type="text" id="formDepartment" class="form-control" placeholder="e.g. AI Engineering">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="formStatus" class="form-label">Account Status</label>
+              <select id="formStatus" class="form-control">
+                <option value="Active">Active</option>
+                <option value="Suspended">Suspended</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            <div class="form-group flex-1 flex-align-center">
+              <label class="checkbox-label">
+                <input type="checkbox" id="formTwoFactor">
+                <span>Enforce 2-Factor Authentication</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnCancelUserModal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitUserForm">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CREATE TOKEN ================= -->
+  <div class="modal-overlay" id="tokenModalOverlay" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Generate API Access Token</h3>
+        <button class="modal-close" id="btnCloseTokenModal">&times;</button>
+      </div>
+      <form id="tokenForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="formTokenName" class="form-label">Token Name / Service Description *</label>
+            <input type="text" id="formTokenName" required class="form-control" placeholder="e.g. AutoApply Agent Service Key">
+          </div>
+          <div class="form-group">
+            <label for="formTokenRole" class="form-label">Privilege Tier *</label>
+            <select id="formTokenRole" class="form-control" required>
+              <option value="Application Operator">Application Operator</option>
+              <option value="DevOps Engineer">DevOps Engineer</option>
+              <option value="Super Admin">Super Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnCancelTokenModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Generate Token</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

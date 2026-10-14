@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Engineer Job Search & Auto-Apply Agent Dashboard</title>
+  <title>Dual-Role AI Job Search & Application Automation Agent</title>
+  <meta name="description" content="Dual Profile Autonomous Job Search & Application Assistant for AI Engineer and Automotive Test Engineer">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -22,378 +23,477 @@
         <div>
           <div class="candidate-name">
             Kamalesan C
-            <span class="badge-tag">AI Engineer</span>
-            <span class="badge-tag" style="color: #a855f7; border-color: rgba(168,85,247,0.3); background: rgba(168,85,247,0.15)">7.4y Exp</span>
+            <span class="badge-tag">Dual-Role Engineer</span>
+            <span class="badge-tag badge-purple">7.4y Experience</span>
           </div>
           <div class="candidate-meta">
             <span>📍 Coimbatore, India</span>
             <span>📞 +91 7305131264</span>
             <a href="mailto:kamaleshcai686@gmail.com">✉️ kamaleshcai686@gmail.com</a>
             <a href="https://www.linkedin.com/in/kamalesan-c-546646442" target="_blank" rel="noopener">🔗 LinkedIn Profile</a>
-            <a href="https://github.com/AdminEpiware/EpiAgent-PMO" target="_blank" rel="noopener">💻 GitHub Portfolio</a>
+            <a href="https://github.com/Kamalesh0206" target="_blank" rel="noopener">💻 GitHub Portfolio</a>
           </div>
         </div>
       </div>
+
       <div class="header-actions">
+        <!-- Profile Mode Selector Switcher -->
+        <div class="profile-mode-selector" id="profileSelector">
+          <button class="profile-pill-btn active" data-profile="ALL" onclick="selectProfile('ALL')">
+            🌐 ALL PROFILES
+          </button>
+          <button class="profile-pill-btn" data-profile="AI_ENGINEER" onclick="selectProfile('AI_ENGINEER')">
+            🤖 AI ENGINEER
+          </button>
+          <button class="profile-pill-btn" data-profile="TEST_ENGINEER" onclick="selectProfile('TEST_ENGINEER')">
+            🚗 TEST ENGINEER
+          </button>
+        </div>
+
         <button id="btn-run-search" class="btn btn-primary" onclick="triggerSearch()">
           <span id="search-spinner" class="spinner" style="display: none;"></span>
-          <span id="search-icon">🚀</span> Run Job Search
+          <span id="search-icon">🚀</span> Run Search
         </button>
-        <a href="/api/resume" target="_blank" class="btn">
-          📄 View Resume PDF
+
+        <a href="/api/export/excel" class="btn btn-secondary" title="Export complete Excel Tracker">
+          📊 Export Excel
         </a>
       </div>
     </header>
 
-    <!-- Stats Cards -->
-    <section class="stats-grid">
+    <!-- Independent Profile Stats Grid (Section 10) -->
+    <section class="stats-grid" id="statsGrid">
       <div class="stat-card">
         <div class="stat-info">
-          <div class="stat-label">Total Jobs Discovered</div>
+          <div class="stat-label">Total Jobs Found</div>
           <div id="stat-total" class="stat-value">--</div>
+          <span class="stat-sub" id="stat-total-sub">All Discovered</span>
         </div>
         <div class="stat-icon icon-cyan">📊</div>
       </div>
+
       <div class="stat-card">
         <div class="stat-info">
-          <div class="stat-label">Pending / In Review</div>
-          <div id="stat-review" class="stat-value">--</div>
+          <div class="stat-label">Relevant Jobs (60+)</div>
+          <div id="stat-relevant" class="stat-value">--</div>
+          <span class="stat-sub text-emerald" id="stat-relevant-sub">High Match</span>
         </div>
-        <div class="stat-icon icon-amber">⏳</div>
+        <div class="stat-icon icon-indigo">🎯</div>
       </div>
+
       <div class="stat-card">
         <div class="stat-info">
-          <div class="stat-label">Submitted Applications</div>
+          <div class="stat-label">Confirmed Sponsorship</div>
+          <div id="stat-sponsorship" class="stat-value">--</div>
+          <span class="stat-sub text-cyan">Visa Supported</span>
+        </div>
+        <div class="stat-icon icon-emerald">🛂</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Remote Positions</div>
+          <div id="stat-remote" class="stat-value">--</div>
+          <span class="stat-sub">Worldwide Remote</span>
+        </div>
+        <div class="stat-icon icon-purple">🌍</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Applications Submitted</div>
           <div id="stat-applied" class="stat-value">--</div>
+          <span class="stat-sub text-emerald">Submitted</span>
         </div>
         <div class="stat-icon icon-emerald">✅</div>
       </div>
+
       <div class="stat-card">
         <div class="stat-info">
-          <div class="stat-label">Interviews / Positive</div>
+          <div class="stat-label">Interviews / Pipeline</div>
           <div id="stat-interviews" class="stat-value">--</div>
+          <span class="stat-sub text-amber">Active Stages</span>
         </div>
-        <div class="stat-icon icon-indigo">🎯</div>
+        <div class="stat-icon icon-amber">💬</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Rejections</div>
+          <div id="stat-rejections" class="stat-value">--</div>
+          <span class="stat-sub text-rose">Closed / Archived</span>
+        </div>
+        <div class="stat-icon icon-rose">🛑</div>
       </div>
     </section>
 
     <!-- Navigation Tabs -->
     <nav class="nav-tabs">
       <button class="tab-btn active" onclick="switchTab('jobs')">
-        💼 Job Tracker & Auto-Apply
+        💼 Live Job Tracker (<span id="tabCountJobs">0</span>)
       </button>
-      <button class="tab-btn" onclick="switchTab('direct-apply')">
-        ⚡ Direct Job Applier
+      <button class="tab-btn" onclick="switchTab('resumes')">
+        📄 ATS Resumes & Portfolios
+      </button>
+      <button class="tab-btn" onclick="switchTab('cover-letter-studio')">
+        ✍️ Tailored Cover Letter Studio
       </button>
       <button class="tab-btn" onclick="switchTab('outreach')">
         💬 Recruiter Outreach Studio
       </button>
-      <button class="tab-btn" onclick="switchTab('profile')">
-        👤 Candidate Profile & ATS Resume
+      <button class="tab-btn" onclick="switchTab('schedule-tab')">
+        ⏱️ Automation Schedule & Sources
       </button>
     </nav>
 
-    <!-- Tab 1: Job Tracker -->
+    <!-- Tab 1: Live Job Tracker -->
     <div id="tab-jobs" class="tab-pane active">
+      <!-- Comprehensive Filters Toolbar -->
       <div class="toolbar">
         <div class="search-box">
           <span>🔍</span>
-          <input type="text" id="job-search-input" placeholder="Search title, company, or location..." oninput="handleSearchFilter()">
+          <input type="text" id="searchInput" placeholder="Search title, company, skills..." oninput="debounceFilter()">
         </div>
 
-        <div class="filters-group">
-          <select id="role-filter" class="filter-select" onchange="handleSearchFilter()">
-            <option value="All">All Role Categories</option>
-            <option value="Senior AI Software Engineer">Senior AI Software Engineer</option>
-            <option value="Senior Software Engineer">Senior Software Engineer</option>
-            <option value="Technical Product Manager">Technical Product Manager</option>
-            <option value="AI Product Manager">AI Product Manager</option>
+        <div class="filter-group">
+          <!-- Role Filter -->
+          <select id="filterProfile" class="select-filter" onchange="applyFilters()">
+            <option value="ALL">All Roles</option>
+            <option value="AI_ENGINEER">AI Engineer Only</option>
+            <option value="TEST_ENGINEER">Test Engineer Only</option>
           </select>
 
-          <select id="status-filter" class="filter-select" onchange="handleSearchFilter()">
+          <!-- Status Filter -->
+          <select id="filterStatus" class="select-filter" onchange="applyFilters()">
             <option value="All">All Statuses</option>
-            <option value="New">New</option>
-            <option value="Review">Review</option>
-            <option value="Applied">Applied</option>
-            <option value="Interview">Interview</option>
-            <option value="Skip">Skip</option>
+            <option value="READY_FOR_REVIEW">Ready For Review</option>
+            <option value="APPROVED">Approved</option>
+            <option value="APPLIED">Applied</option>
+            <option value="SHORTLISTED">Shortlisted</option>
+            <option value="DISCOVERED">Discovered</option>
+            <option value="INTERVIEW">Interview</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="WITHDRAWN">Withdrawn</option>
           </select>
 
-          <button class="btn btn-sm" onclick="fetchJobs()">🔄 Refresh</button>
+          <!-- Country Filter -->
+          <select id="filterCountry" class="select-filter" onchange="applyFilters()">
+            <option value="All">All Countries</option>
+          </select>
+
+          <!-- Work Arrangement -->
+          <select id="filterWorkArrangement" class="select-filter" onchange="applyFilters()">
+            <option value="All">All Arrangements</option>
+            <option value="Remote">Remote Only</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="On-site">On-site</option>
+          </select>
+
+          <!-- Visa Sponsorship -->
+          <select id="filterSponsorship" class="select-filter" onchange="applyFilters()">
+            <option value="All">All Sponsorship</option>
+            <option value="CONFIRMED">Confirmed Visa Only</option>
+            <option value="UNKNOWN">Unknown / Flexible</option>
+            <option value="NOT_OFFERED">No Sponsorship</option>
+          </select>
+
+          <!-- Min Score -->
+          <select id="filterMinScore" class="select-filter" onchange="applyFilters()">
+            <option value="0">All Scores (0+)</option>
+            <option value="60">Score 60+ (Relevant)</option>
+            <option value="75">Score 75+ (High Match)</option>
+            <option value="85">Score 85+ (Top Tier)</option>
+          </select>
         </div>
       </div>
 
+      <!-- Live Search Tracker Status Bar -->
+      <div id="search-task-banner" class="task-banner" style="display: none;">
+        <span class="spinner"></span>
+        <span id="search-task-text">Running search...</span>
+      </div>
+
+      <!-- Main Jobs Table -->
       <div class="table-card">
-        <div class="table-wrapper">
-          <table class="jobs-table">
-            <thead>
-              <tr>
-                <th style="width: 50px;">ID</th>
-                <th>Role Category</th>
-                <th>Job Title</th>
-                <th>Company</th>
-                <th>Location</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="jobs-table-body">
-              <tr>
-                <td colspan="7" style="text-align: center; color: var(--text-faint); padding: 30px;">
-                  Loading jobs from Excel database...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <table class="jobs-table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">Score</th>
+              <th style="width: 120px;">Profile</th>
+              <th>Job Title & Company</th>
+              <th>Location & Work Mode</th>
+              <th>Visa Status</th>
+              <th>Matched Skills</th>
+              <th>Application Status</th>
+              <th style="text-align: right; width: 180px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="jobsTableBody">
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                Loading tracker records from Excel...
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Tab 2: Direct Job Applier -->
-    <div id="tab-direct-apply" class="tab-pane">
-      <div class="form-card">
-        <div class="form-title">⚡ Instant Automated Job Applier</div>
-        <div class="form-subtitle">
-          Paste any job posting URL (Greenhouse, Lever, LinkedIn, or custom ATS). The agent will launch Playwright, load your 7.4-year AI profile, generate a tailored cover letter, and populate the ATS form.
-        </div>
-
-        <div class="form-group">
-          <label for="apply-url">Target Job Application URL *</label>
-          <input type="url" id="apply-url" class="form-control" placeholder="https://boards.greenhouse.io/... or https://jobs.lever.co/..." required>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="apply-title">Job Title</label>
-            <input type="text" id="apply-title" class="form-control" value="AI Engineer">
-          </div>
-          <div class="form-group">
-            <label for="apply-company">Company Name</label>
-            <input type="text" id="apply-company" class="form-control" value="Target Company">
-          </div>
-        </div>
-
-        <div class="checkbox-row">
-          <label class="checkbox-item">
-            <input type="checkbox" id="apply-headless">
-            <span>Run in Background (Headless Mode)</span>
-          </label>
-          <label class="checkbox-item">
-            <input type="checkbox" id="apply-dryrun" checked>
-            <span>Interactive Review Mode (Pre-fill without auto-submitting)</span>
-          </label>
-          <label class="checkbox-item">
-            <input type="checkbox" id="apply-autosubmit">
-            <span>Auto-Submit after form completion</span>
-          </label>
-        </div>
-
-        <div style="display: flex; gap: 12px; margin-top: 10px;">
-          <button id="btn-launch-apply" class="btn btn-primary" onclick="launchDirectApply()">
-            <span id="apply-spinner" class="spinner" style="display: none;"></span>
-            🚀 Launch Apply Agent
-          </button>
-          <button class="btn" onclick="previewDirectCoverLetter()">
-            ✉️ Preview Tailored Cover Letter
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tab 3: Recruiter Outreach Studio -->
-    <div id="tab-outreach" class="tab-pane">
-      <div class="form-card">
-        <div class="form-title">💬 Recruiter Outreach Message Studio</div>
-        <div class="form-subtitle">
-          Generate high-conversion outreach templates customized with Kamalesan's AI Engineer background, projects, and LinkedIn profile.
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="outreach-name">Recruiter / Manager Name</label>
-            <input type="text" id="outreach-name" class="form-control" placeholder="e.g., Sarah Jenkins" value="Hiring Manager">
-          </div>
-          <div class="form-group">
-            <label for="outreach-company">Company Name</label>
-            <input type="text" id="outreach-company" class="form-control" placeholder="e.g., Anthropic / Scale AI" value="Target Company">
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="outreach-role">Target Role</label>
-          <input type="text" id="outreach-role" class="form-control" placeholder="e.g., AI Engineer / Generative AI Engineer" value="AI Engineer">
-        </div>
-
-        <button class="btn btn-primary" onclick="generateOutreachStudio()">
-          ✨ Generate Personalized Outreach Messages
-        </button>
-
-        <div id="outreach-results" style="margin-top: 28px; display: none;">
-          <!-- LinkedIn Connection Note -->
-          <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <label>1. LinkedIn Connection Request Note (<300 Characters)</label>
-              <button class="btn btn-sm" onclick="copyFromElement('outreach-note-box')">📋 Copy Note</button>
+    <!-- Tab 2: Dual Resumes & Portfolios -->
+    <div id="tab-resumes" class="tab-pane">
+      <div class="resumes-dual-grid">
+        <!-- Resume A: AI Engineer -->
+        <div class="resume-card">
+          <div class="resume-card-header">
+            <div>
+              <span class="badge-role badge-ai">PROFILE A</span>
+              <h3>AI Engineer ATS Resume</h3>
+              <p>Specialized for Generative AI, LLMs, AI Agents, Python & FastAPI</p>
             </div>
-            <div id="outreach-note-box" class="copy-block"></div>
-          </div>
-
-          <!-- Recruiter InMail -->
-          <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <label>2. LinkedIn Direct InMail / Recruiter Pitch</label>
-              <button class="btn btn-sm" onclick="copyFromElement('outreach-inmail-box')">📋 Copy InMail</button>
-            </div>
-            <div id="outreach-inmail-box" class="copy-block"></div>
-          </div>
-
-          <!-- Cold Email -->
-          <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <label>3. Hiring Manager Cold Email</label>
-              <button class="btn btn-sm" onclick="copyColdEmail()">📋 Copy Subject & Body</button>
-            </div>
-            <div style="font-weight: 600; color: #38bdf8; margin-bottom: 4px; font-size: 13px;" id="outreach-email-subject"></div>
-            <div id="outreach-email-body" class="copy-block"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tab 4: Candidate Profile & Resume -->
-    <div id="tab-profile" class="tab-pane">
-      <div class="form-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <div>
-            <div class="form-title">👤 Candidate Profile & ATS Resume</div>
-            <div class="form-subtitle">Configured profile parameters used by the automated applying agent.</div>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-indigo" onclick="regenerateResumePdf()">
-              <span id="regen-spinner" class="spinner" style="display: none;"></span>
-              🔄 Regenerate Resume PDF
-            </button>
-            <a href="/api/resume" target="_blank" class="btn btn-primary">
-              📥 Download PDF
+            <a href="/api/resume/AI_ENGINEER" target="_blank" class="btn btn-primary btn-sm">
+              📥 Open AI Resume (PDF)
             </a>
           </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" id="prof-name" class="form-control" readonly>
-          </div>
-          <div class="form-group">
-            <label>Email Address</label>
-            <input type="text" id="prof-email" class="form-control" readonly>
+          <div class="resume-preview-frame">
+            <iframe src="/api/resume/AI_ENGINEER" class="pdf-iframe"></iframe>
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Phone Number</label>
-            <input type="text" id="prof-phone" class="form-control" readonly>
+        <!-- Resume B: Test Engineer -->
+        <div class="resume-card">
+          <div class="resume-card-header">
+            <div>
+              <span class="badge-role badge-test">PROFILE B</span>
+              <h3>Test Engineer ATS Resume</h3>
+              <p>Specialized for Automotive ECU Validation, HIL/SIL, ECU-TEST & CANoe</p>
+            </div>
+            <a href="/api/resume/TEST_ENGINEER" target="_blank" class="btn btn-primary btn-sm">
+              📥 Open Test Resume (PDF)
+            </a>
           </div>
-          <div class="form-group">
-            <label>Location</label>
-            <input type="text" id="prof-location" class="form-control" readonly>
+          <div class="resume-preview-frame">
+            <iframe src="/api/resume/TEST_ENGINEER" class="pdf-iframe"></iframe>
           </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>LinkedIn Profile</label>
-            <input type="text" id="prof-linkedin" class="form-control" readonly>
-          </div>
-          <div class="form-group">
-            <label>GitHub Profile</label>
-            <input type="text" id="prof-github" class="form-control" readonly>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Work Authorization & Mobility</label>
-          <input type="text" id="prof-auth" class="form-control" readonly>
-        </div>
-
-        <div class="form-group">
-          <label>Cover Letter Template</label>
-          <textarea id="prof-coverletter" class="form-control" rows="8" readonly></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Live ATS Resume Preview</label>
-          <iframe src="/api/resume" style="width: 100%; height: 600px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: #ffffff;"></iframe>
         </div>
       </div>
     </div>
 
-    <!-- Live Terminal / Agent Activity Console -->
-    <div class="terminal-card">
-      <div class="terminal-header">
-        <div class="terminal-title">
-          <span style="color: #22c55e;">●</span> Agent Live Activity Console
+    <!-- Tab 3: Tailored Cover Letter Studio -->
+    <div id="tab-cover-letter-studio" class="tab-pane">
+      <div class="studio-card">
+        <div class="studio-header">
+          <div>
+            <h3>Tailored Cover Letter Generator</h3>
+            <p>Generates factual, role-aligned ATS letters tailored to employer requirements</p>
+          </div>
         </div>
-        <div id="terminal-status" style="font-size: 11px; color: var(--text-faint);">Agent Idle</div>
+        <div class="studio-grid">
+          <div class="studio-form">
+            <div class="form-group">
+              <label>Target Profile *</label>
+              <select id="clProfileSelect" class="form-input">
+                <option value="AI_ENGINEER">AI Engineer (GenAI, LLMs, AI Agents, Python)</option>
+                <option value="TEST_ENGINEER">Test Engineer (Automotive ECU, HIL/SIL, CANoe)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Company Name *</label>
+              <input type="text" id="clCompanyInput" class="form-input" placeholder="e.g. BMW Group, Anthropic, Bosch">
+            </div>
+            <div class="form-group">
+              <label>Job Title *</label>
+              <input type="text" id="clTitleInput" class="form-input" placeholder="e.g. Senior AI Engineer, HIL Test Engineer">
+            </div>
+            <div class="form-group">
+              <label>Job Description Snippet (Optional)</label>
+              <textarea id="clDescInput" class="form-input" rows="4" placeholder="Paste job requirements to align keywords..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="generateStudioCoverLetter()">
+              ⚡ Generate Tailored Letter
+            </button>
+          </div>
+          <div class="studio-output">
+            <div class="output-header">
+              <span>Generated Document</span>
+              <button class="btn btn-xs btn-secondary" onclick="copyCoverLetterText()">📋 Copy</button>
+            </div>
+            <textarea id="clOutputText" class="code-box" readonly placeholder="Your generated cover letter will appear here..."></textarea>
+          </div>
+        </div>
       </div>
-      <div id="terminal-body" class="terminal-body">
-[SYSTEM] Agent Dashboard initialized. Ready to search or apply.
-[CONFIG] Loaded candidate Kamalesan C (7.4y AI Engineer)
-[STATUS] Local database contains tracked opportunities. Ready!
+    </div>
+
+    <!-- Tab 4: Recruiter Outreach -->
+    <div id="tab-outreach" class="tab-pane">
+      <div class="studio-card">
+        <div class="studio-header">
+          <div>
+            <h3>Recruiter Direct Outreach Studio</h3>
+            <p>Personalized LinkedIn Connection Notes, Recruiter InMails, and Cold Emails</p>
+          </div>
+        </div>
+        <div class="studio-grid">
+          <div class="studio-form">
+            <div class="form-group">
+              <label>Recruiter / Hiring Manager Name</label>
+              <input type="text" id="outreachRecruiterName" class="form-input" placeholder="e.g. Sarah Jenkins">
+            </div>
+            <div class="form-group">
+              <label>Company Name</label>
+              <input type="text" id="outreachCompany" class="form-input" placeholder="e.g. Siemens Healthineers">
+            </div>
+            <div class="form-group">
+              <label>Target Role Title</label>
+              <input type="text" id="outreachRole" class="form-input" placeholder="e.g. Senior AI Engineer">
+            </div>
+            <button class="btn btn-primary" onclick="generateOutreachNotes()">
+              ✉️ Generate Messages
+            </button>
+          </div>
+          <div class="studio-output">
+            <div class="form-group">
+              <label>LinkedIn Connection Note (&lt; 300 chars)</label>
+              <textarea id="outreachLinkedInNote" class="form-input" rows="3" readonly></textarea>
+            </div>
+            <div class="form-group">
+              <label>Recruiter InMail</label>
+              <textarea id="outreachInMail" class="form-input" rows="4" readonly></textarea>
+            </div>
+            <div class="form-group">
+              <label>Cold Email (Subject & Body)</label>
+              <input type="text" id="outreachEmailSub" class="form-input mb-2" readonly placeholder="Subject...">
+              <textarea id="outreachEmailBody" class="form-input" rows="5" readonly></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 5: Schedule & Automation -->
+    <div id="tab-schedule-tab" class="tab-pane">
+      <div class="studio-card">
+        <div class="studio-header">
+          <div>
+            <h3>Job Search Automation Schedule</h3>
+            <p>Configure automated discovery intervals, rate limit throttles, and active sources</p>
+          </div>
+        </div>
+        <div class="schedule-grid">
+          <div class="schedule-box">
+            <h4>Active Sources & Global Coverage</h4>
+            <ul class="source-list">
+              <li>
+                <span class="source-dot online"></span>
+                <strong>Remotive Public API:</strong> Worldwide Remote Software & AI Vacancies
+              </li>
+              <li>
+                <span class="source-dot online"></span>
+                <strong>Arbeitnow Public API:</strong> Germany, Netherlands, Sweden, UK & Europe
+              </li>
+              <li>
+                <span class="source-dot online"></span>
+                <strong>EU Remote Jobs:</strong> Specialized European Remote Tech Positions
+              </li>
+              <li>
+                <span class="source-dot online"></span>
+                <strong>LinkedIn Public Endpoints:</strong> Rate-limited public queries (24h window)
+              </li>
+            </ul>
+          </div>
+          <div class="schedule-box">
+            <h4>Daily Automated Schedule</h4>
+            <div class="form-group">
+              <label>Execution Mode</label>
+              <select id="schedModeSelect" class="form-input">
+                <option value="manual">Manual On-Demand (Recommended)</option>
+                <option value="daily">Daily Scheduled</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Target Time (IST)</label>
+              <input type="time" id="schedTimeInput" class="form-input" value="09:00">
+            </div>
+            <button class="btn btn-primary" onclick="saveScheduleSettings()">
+              Save Schedule Settings
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
   </div>
 
-  <!-- Cover Letter Modal -->
-  <div id="modal-cover-letter" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modal-cl-title">Tailored Cover Letter Preview</h3>
-        <button class="modal-close" onclick="closeModal('modal-cover-letter')">&times;</button>
+  <!-- Job Inspection & Application Review Drawer / Modal -->
+  <div class="drawer-overlay" id="jobDrawerOverlay" style="display: none;" onclick="closeJobDrawer(event)">
+    <div class="drawer-panel" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <div>
+          <span class="badge-role" id="drawerRoleBadge">AI_ENGINEER</span>
+          <h2 id="drawerTitle" style="font-size: 1.25rem; font-weight: 700; margin-top: 4px;">Job Title</h2>
+          <div id="drawerCompanyLoc" class="drawer-meta">Company • Location</div>
+        </div>
+        <button class="btn-close" onclick="closeJobDrawer()">&times;</button>
       </div>
-      <div class="modal-body">
-        <div id="modal-cl-text" class="copy-block"></div>
+
+      <div class="drawer-body">
+        <!-- Score & Status Highlight Banner -->
+        <div class="drawer-banner">
+          <div class="score-badge-large" id="drawerScore">78</div>
+          <div>
+            <div class="drawer-banner-title">Relevance Assessment</div>
+            <div class="drawer-banner-sub" id="drawerExplanation">Explanation...</div>
+          </div>
+        </div>
+
+        <!-- Matched & Missing Skills -->
+        <div class="drawer-section">
+          <h4>Technical Skills Match</h4>
+          <div class="skills-tag-wrap" id="drawerMatchedSkills"></div>
+          <div class="skills-missing-wrap" id="drawerMissingSkills"></div>
+        </div>
+
+        <!-- Tailored Application Documents Preview -->
+        <div class="drawer-section">
+          <div class="drawer-section-header">
+            <h4>Application Documents</h4>
+            <button class="btn btn-xs btn-secondary" onclick="regenerateDrawerDocs()">🔄 Refresh Documents</button>
+          </div>
+          <div class="doc-pill-wrap">
+            <span class="doc-pill">📄 Resume: <strong id="drawerResumeName">Kamalesan_C_AI_Engineer_Resume.pdf</strong></span>
+            <a href="#" id="drawerResumeDownload" target="_blank" class="btn-link">View PDF &rarr;</a>
+          </div>
+          <div class="form-group mt-2">
+            <label>Tailored Cover Letter Preview</label>
+            <textarea id="drawerCoverLetterText" class="code-box" rows="8" readonly></textarea>
+          </div>
+        </div>
+
+        <!-- Job Description -->
+        <div class="drawer-section">
+          <h4>Job Description</h4>
+          <div id="drawerDescription" class="job-description-box"></div>
+        </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="closeModal('modal-cover-letter')">Close</button>
-        <button class="btn btn-primary" onclick="copyFromElement('modal-cl-text')">📋 Copy Cover Letter</button>
+
+      <!-- Human-in-the-Loop Application Controls -->
+      <div class="drawer-footer">
+        <a href="#" id="drawerExternalLink" target="_blank" rel="noopener" class="btn btn-secondary">
+          🔗 Open Listing
+        </a>
+        <button class="btn btn-rose" id="btnDrawerReject" onclick="rejectCurrentJob()">
+          ❌ Reject
+        </button>
+        <button class="btn btn-emerald" id="btnDrawerApprove" onclick="approveCurrentJob()">
+          ✅ Approve Application
+        </button>
+        <button class="btn btn-primary" id="btnDrawerApply" onclick="launchPlaywrightApply()">
+          ⚡ Submit via Playwright
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Recruiter Modal -->
-  <div id="modal-outreach" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modal-outreach-title">Recruiter Outreach Templates</h3>
-        <button class="modal-close" onclick="closeModal('modal-outreach')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div style="margin-bottom: 14px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <strong style="font-size: 13px; color: #38bdf8;">LinkedIn Connection Note (&le;300 Chars)</strong>
-            <button class="btn btn-sm" onclick="copyFromElement('modal-outreach-note')">📋 Copy</button>
-          </div>
-          <div id="modal-outreach-note" class="copy-block"></div>
-        </div>
-
-        <div style="margin-bottom: 14px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <strong style="font-size: 13px; color: #38bdf8;">LinkedIn InMail / Recruiter Message</strong>
-            <button class="btn btn-sm" onclick="copyFromElement('modal-outreach-inmail')">📋 Copy</button>
-          </div>
-          <div id="modal-outreach-inmail" class="copy-block"></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="closeModal('modal-outreach')">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notification -->
-  <div id="toast" class="toast">Action completed!</div>
+  <div class="toast-container" id="toastContainer"></div>
 
   <script src="/static/app.js"></script>
 </body>

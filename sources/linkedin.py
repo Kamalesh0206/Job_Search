@@ -167,19 +167,15 @@ def _request_page(
     return None
 
 
-def collect(config):
+def collect(config, queries=None):
 
-    search_cfg = config[
-        "search"
-    ]
+    search_cfg = config.get("search", {})
 
-    recent_hours = search_cfg[
-        "linkedin_recent_hours"
-    ]
+    recent_hours = search_cfg.get("linkedin_recent_hours", 24)
 
     max_pages = search_cfg.get(
         "linkedin_max_pages",
-        20
+        10
     )
 
     page_size = search_cfg.get(
@@ -196,9 +192,17 @@ def collect(config):
         recent_hours * 3600
     )
 
-    queries = config[
-        "linkedin_queries"
-    ]
+    if queries is None:
+        queries = []
+        profiles = config.get("profiles", {})
+        active_prof = config.get("active_profile", "ALL")
+        if active_prof in ("AI_ENGINEER", "ALL") and "AI_ENGINEER" in profiles and profiles["AI_ENGINEER"].get("enabled", True):
+            queries.extend(profiles["AI_ENGINEER"].get("search_queries", []))
+        if active_prof in ("TEST_ENGINEER", "ALL") and "TEST_ENGINEER" in profiles and profiles["TEST_ENGINEER"].get("enabled", True):
+            queries.extend(profiles["TEST_ENGINEER"].get("search_queries", []))
+        if not queries:
+            queries = config.get("linkedin_queries", ["AI Engineer", "Automotive Test Engineer"])
+    queries = list(dict.fromkeys(queries))
 
     session = requests.Session()
 

@@ -1,437 +1,608 @@
-let allJobs = [];
+// ==========================================================================
+// Dual-Role Job Search & Application Automation Agent - Client Application
+// ==========================================================================
 
-// ---------------- Init ----------------
-document.addEventListener("DOMContentLoaded", () => {
+const state = {
+  activeProfile: 'ALL',
+  currentTab: 'jobs',
+  jobs: [],
+  selectedJob: null,
+  stats: null,
+  filters: {
+    status: 'All',
+    country: 'All',
+    workArrangement: 'All',
+    sponsorship: 'All',
+    minScore: 0,
+    search: ''
+  },
+  searchPollingInterval: null
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  initProfileSelector();
   fetchStats();
   fetchJobs();
-  fetchProfile();
-  setInterval(pollTasks, 3000);
+  pollSearchStatus();
 });
 
-// ---------------- Tabs ----------------
-function switchTab(tabId) {
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+// Profile Mode Switcher (Section 2)
+function selectProfile(profileId) {
+  state.activeProfile = profileId;
 
-  event.currentTarget.classList.add("active");
-  const target = document.getElementById(`tab-${tabId}`);
-  if (target) target.classList.add("active");
+  document.querySelectorAll('.profile-pill-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-profile') === profileId);
+  });
+
+  const filterProfileSelect = document.getElementById('filterProfile');
+  if (filterProfileSelect) {
+    filterProfileSelect.value = profileId;
+  }
+
+  fetchStats();
+  fetchJobs();
 }
 
-// ---------------- Stats ----------------
+function initProfileSelector() {
+  const filterProfile = document.getElementById('filterProfile');
+  if (filterProfile) {
+    filterProfile.addEventListener('change', (e) => {
+      selectProfile(e.target.value);
+    });
+  }
+}
+
+// Tab Switching
+function switchTab(tabId) {
+  state.currentTab = tabId;
+
+  document.querySelectorAll('.nav-tabs .tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  document.querySelectorAll('.tab-pane').forEach(pane => {
+    pane.classList.remove('active');
+  });
+
+  const targetPane = document.getElementById(`tab-${tabId}`);
+  if (targetPane) {
+    targetPane.classList.add('active');
+  }
+
+  // Highlight active tab button
+  const buttons = document.querySelectorAll('.nav-tabs .tab-btn');
+  buttons.forEach(b => {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId)) {
+      b.classList.add('active');
+    }
+  });
+}
+
+// Fetch Real Stored Records Stats (Section 10)
 async function fetchStats() {
   try {
-    const res = await fetch("/api/stats");
+    const res = await fetch(`/api/stats?profile=${state.activeProfile}`);
+    if (!res.ok) throw new Error('Failed to fetch stats');
     const data = await res.json();
-    document.getElementById("stat-total").textContent = data.total || 0;
-    
-    const byStatus = data.by_status || {};
-    const reviewCount = (byStatus["New"] || 0) + (byStatus["Review"] || 0);
-    const appliedCount = byStatus["Applied"] || 0;
-    const interviewCount = (byStatus["Interview"] || 0) + (byStatus["Offer"] || 0);
+    state.stats = data;
+    renderStats(data.stats);
 
-    document.getElementById("stat-review").textContent = reviewCount;
-    document.getElementById("stat-applied").textContent = appliedCount;
-    document.getElementById("stat-interviews").textContent = interviewCount;
-
-    // Update agent terminal status if running
-    if (data.search_task?.status === "running") {
-      updateTerminalStatus("🔍 Crawling job portals in background...", true);
-    } else if (data.apply_task?.status === "running") {
-      updateTerminalStatus("⚡ Apply agent running form automation...", true);
-    } else {
-      updateTerminalStatus("Agent Idle", false);
+    // Populate country dropdown if not already populated
+    if (data.available_countries && data.available_countries.length > 0) {
+      populateCountryFilter(data.available_countries);
     }
   } catch (err) {
-    console.error("Failed to load stats", err);
+    console.error('Error loading statistics:', err);
   }
 }
 
-// ---------------- Jobs ----------------
+function renderStats(s) {
+  if (!s) return;
+  document.getElementById('stat-total').textContent = s.total_jobs ?? 0;
+  document.getElementById('stat-relevant').textContent = s.relevant_jobs ?? 0;
+  document.getElementById('stat-sponsorship').textContent = s.confirmed_sponsorship ?? 0;
+  document.getElementById('stat-remote').textContent = s.remote_jobs ?? 0;
+  document.getElementById('stat-applied').textContent = s.applications_submitted ?? 0;
+  document.getElementById('stat-interviews').textContent = s.interviews ?? 0;
+  document.getElementById('stat-rejections').textContent = s.rejections ?? 0;
+
+  const profName = state.activeProfile === 'ALL' ? 'All Roles' : (state.activeProfile === 'AI_ENGINEER' ? 'AI Engineer' : 'Test Engineer');
+  const sub = document.getElementById('stat-total-sub');
+  if (sub) sub.textContent = profName;
+}
+
+function populateCountryFilter(countries) {
+  const sel = document.getElementById('filterCountry');
+  if (!sel || sel.children.length > 1) return;
+
+  countries.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    sel.appendChild(opt);
+  });
+}
+
+// Fetch Filtered Jobs
 async function fetchJobs() {
+  const params = new URLSearchParams();
+  if (state.activeProfile) params.append('profile', state.activeProfile);
+  if (state.filters.status && state.filters.status !== 'All') params.append('status', state.filters.status);
+  if (state.filters.country && state.filters.country !== 'All') params.append('country', state.filters.country);
+  if (state.filters.workArrangement && state.filters.workArrangement !== 'All') params.append('work_arrangement', state.filters.workArrangement);
+  if (state.filters.sponsorship && state.filters.sponsorship !== 'All') params.append('sponsorship', state.filters.sponsorship);
+  if (state.filters.minScore > 0) params.append('min_score', state.filters.minScore);
+  if (state.filters.search) params.append('search', state.filters.search);
+
   try {
-    const res = await fetch("/api/jobs");
+    const res = await fetch(`/api/jobs?${params.toString()}`);
+    if (!res.ok) throw new Error('Failed to fetch jobs');
     const data = await res.json();
-    allJobs = data.jobs || [];
-    renderJobs(allJobs);
+    state.jobs = data.jobs || [];
+
+    const tabCount = document.getElementById('tabCountJobs');
+    if (tabCount) tabCount.textContent = data.count;
+
+    renderJobsTable(state.jobs);
   } catch (err) {
-    console.error("Failed to fetch jobs", err);
+    console.error('Error fetching jobs:', err);
   }
 }
 
-function renderJobs(jobs) {
-  const tbody = document.getElementById("jobs-table-body");
-  if (!jobs || jobs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-faint); padding: 30px;">No jobs found matching criteria.</td></tr>`;
-    return;
-  }
+// Render Jobs Table
+function renderJobsTable(jobs) {
+  const tbody = document.getElementById('jobsTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
 
-  tbody.innerHTML = jobs.map(j => {
-    const statusClass = `badge-${(j.status || "new").toLowerCase()}`;
-    return `
+  if (!jobs || jobs.length === 0) {
+    tbody.innerHTML = `
       <tr>
-        <td style="font-weight: 700; color: var(--text-faint);">${j.id}</td>
-        <td>
-          <span style="font-size: 11px; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,0.06); color: #38bdf8;">
-            ${escapeHtml(j.role_category)}
-          </span>
-        </td>
-        <td class="job-title-cell">
-          <a href="${escapeHtml(j.url)}" target="_blank" rel="noopener" style="color: var(--text-main); text-decoration: none;" title="Open Job Link">
-            ${escapeHtml(j.title)} 🔗
-          </a>
-        </td>
-        <td class="job-company-cell">${escapeHtml(j.company)}</td>
-        <td class="job-location-cell">${escapeHtml(j.location || "Remote")}</td>
-        <td>
-          <select class="filter-select" style="padding: 4px 8px; font-size: 11px;" onchange="updateJobStatus('${j.id}', this.value)">
-            <option value="New" ${j.status === "New" ? "selected" : ""}>New</option>
-            <option value="Review" ${j.status === "Review" ? "selected" : ""}>Review</option>
-            <option value="Applied" ${j.status === "Applied" ? "selected" : ""}>Applied</option>
-            <option value="Interview" ${j.status === "Interview" ? "selected" : ""}>Interview</option>
-            <option value="Skip" ${j.status === "Skip" ? "selected" : ""}>Skip</option>
-          </select>
-        </td>
-        <td>
-          <div class="row-actions">
-            <button class="btn btn-sm btn-primary" title="Launch Auto-Apply for this job" onclick="applyJobFromRow('${j.id}', '${escapeAttr(j.url)}', '${escapeAttr(j.title)}', '${escapeAttr(j.company)}')">
-              ⚡ Apply
-            </button>
-            <button class="btn btn-sm" title="Preview tailored cover letter" onclick="previewCoverLetter('${escapeAttr(j.title)}', '${escapeAttr(j.company)}')">
-              ✉️ Letter
-            </button>
-            <button class="btn btn-sm" title="Recruiter Outreach" onclick="previewOutreach('${escapeAttr(j.company)}', '${escapeAttr(j.title)}')">
-              💬 Outreach
-            </button>
-          </div>
+        <td colspan="8" style="text-align: center; padding: 48px; color: var(--text-dim);">
+          No job listings found matching your current filters.
         </td>
       </tr>
     `;
-  }).join("");
-}
-
-function handleSearchFilter() {
-  const query = document.getElementById("job-search-input").value.toLowerCase().trim();
-  const role = document.getElementById("role-filter").value;
-  const status = document.getElementById("status-filter").value;
-
-  const filtered = allJobs.filter(j => {
-    const matchText = !query || 
-      j.title.toLowerCase().includes(query) || 
-      j.company.toLowerCase().includes(query) || 
-      (j.location && j.location.toLowerCase().includes(query));
-
-    const matchRole = role === "All" || j.role_category === role;
-    const matchStatus = status === "All" || (j.status || "").toLowerCase() === status.toLowerCase();
-
-    return matchText && matchRole && matchStatus;
-  });
-
-  renderJobs(filtered);
-}
-
-// ---------------- Update Status ----------------
-async function updateJobStatus(jobId, newStatus) {
-  try {
-    const res = await fetch(`/api/jobs/${jobId}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus })
-    });
-    if (res.ok) {
-      showToast(`Job #${jobId} status updated to ${newStatus}`);
-      fetchStats();
-    }
-  } catch (err) {
-    console.error(err);
-    showToast("Failed to update status");
-  }
-}
-
-// ---------------- Apply Actions ----------------
-async function applyJobFromRow(id, url, title, company) {
-  logTerminal(`[APPLY REQUEST] Launching apply agent for Job #${id} (${title} @ ${company})`);
-  showToast(`Starting apply automation for ${company}...`);
-
-  try {
-    const res = await fetch("/api/apply", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        job_url: url,
-        job_title: title,
-        company_name: company,
-        headless: false, // visible headed for interactive review
-        dry_run: true,
-        auto_submit: false,
-        job_id: id
-      })
-    });
-    const data = await res.json();
-    logTerminal(`[AGENT DISPATCH] ${data.message}`);
-  } catch (err) {
-    logTerminal(`[ERROR] Failed to launch apply agent: ${err}`);
-  }
-}
-
-async function launchDirectApply() {
-  const url = document.getElementById("apply-url").value.trim();
-  if (!url) {
-    alert("Please enter a valid job URL");
     return;
   }
-  const title = document.getElementById("apply-title").value.trim() || "AI Engineer";
-  const company = document.getElementById("apply-company").value.trim() || "Target Company";
-  const headless = document.getElementById("apply-headless").checked;
-  const dryRun = document.getElementById("apply-dryrun").checked;
-  const autoSubmit = document.getElementById("apply-autosubmit").checked;
 
-  const btn = document.getElementById("btn-launch-apply");
-  const spinner = document.getElementById("apply-spinner");
-  btn.disabled = true;
-  spinner.style.display = "inline-block";
+  jobs.forEach(job => {
+    const tr = document.createElement('tr');
 
-  logTerminal(`[DIRECT APPLY] Target: ${title} @ ${company} (${url})`);
-  logTerminal(`[DIRECT APPLY] Options: Headless=${headless}, DryRun=${dryRun}, AutoSubmit=${autoSubmit}`);
+    const score = parseInt(job.relevance_score || 0);
+    let scoreClass = 'score-low';
+    if (score >= 75) scoreClass = 'score-high';
+    else if (score >= 60) scoreClass = 'score-med';
+
+    const pid = (job.role_category || job.profile_id || 'AI_ENGINEER').toUpperCase();
+    let roleClass = 'badge-ai';
+    if (pid.includes('TEST')) roleClass = 'badge-test';
+    else if (pid.includes('BOTH')) roleClass = 'badge-both';
+
+    const statusNorm = (job.status || 'DISCOVERED').toUpperCase();
+    const statusClass = `status-${statusNorm.toLowerCase()}`;
+
+    const visaStatus = (job.visa_sponsorship_status || 'UNKNOWN').toUpperCase();
+    let visaBadge = `<span style="color: var(--text-dim); font-size: 0.76rem;">Unknown</span>`;
+    if (visaStatus === 'CONFIRMED') {
+      visaBadge = `<span style="color: var(--accent-emerald); font-weight: 700; font-size: 0.78rem;">✓ Confirmed</span>`;
+    } else if (visaStatus === 'NOT_OFFERED') {
+      visaBadge = `<span style="color: var(--accent-rose); font-size: 0.76rem;">No Sponsor</span>`;
+    }
+
+    const matchedSnippet = job.matched_skills ? job.matched_skills.split(',').slice(0, 3).map(s => `<span class="skill-chip">${escapeHtml(s.trim())}</span>`).join('') : '<span style="color: var(--text-dim); font-size: 0.75rem;">—</span>';
+
+    tr.innerHTML = `
+      <td><span class="score-pill ${scoreClass}">${score}</span></td>
+      <td><span class="badge-role ${roleClass}">${escapeHtml(pid)}</span></td>
+      <td>
+        <div style="font-weight: 700; color: #fff;">${escapeHtml(job.title)}</div>
+        <div style="font-size: 0.78rem; color: var(--accent-cyan);">${escapeHtml(job.company)} • <span style="color: var(--text-muted);">${escapeHtml(job.source)}</span></div>
+      </td>
+      <td>
+        <div style="font-size: 0.82rem;">${escapeHtml(job.country || job.city || 'Remote')}</div>
+        <div style="font-size: 0.74rem; color: var(--text-dim);">${escapeHtml(job.work_arrangement || 'Remote')}</div>
+      </td>
+      <td>${visaBadge}</td>
+      <td><div class="skills-tag-wrap">${matchedSnippet}</div></td>
+      <td><span class="status-badge ${statusClass}">${escapeHtml(job.status || 'DISCOVERED')}</span></td>
+      <td style="text-align: right;">
+        <button class="btn btn-secondary btn-xs" onclick="openJobDrawer(${job.id})">
+          🔍 Inspect
+        </button>
+        ${statusNorm !== 'APPROVED' && statusNorm !== 'APPLIED' ? `
+          <button class="btn btn-emerald btn-xs" onclick="quickApprove(${job.id}, event)" title="Approve for submission">
+            ✓
+          </button>
+        ` : ''}
+        ${statusNorm !== 'REJECTED' ? `
+          <button class="btn btn-rose btn-xs" onclick="quickReject(${job.id}, event)" title="Reject">
+            ✕
+          </button>
+        ` : ''}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Filter Handling
+let debounceTimer;
+function debounceFilter() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    applyFilters();
+  }, 250);
+}
+
+function applyFilters() {
+  state.filters.status = document.getElementById('filterStatus').value;
+  state.filters.country = document.getElementById('filterCountry').value;
+  state.filters.workArrangement = document.getElementById('filterWorkArrangement').value;
+  state.filters.sponsorship = document.getElementById('filterSponsorship').value;
+  state.filters.minScore = parseInt(document.getElementById('filterMinScore').value || '0');
+  state.filters.search = document.getElementById('searchInput').value.trim();
+
+  fetchJobs();
+}
+
+// Quick Status Actions
+async function quickApprove(jobId, e) {
+  if (e) e.stopPropagation();
+  try {
+    const res = await fetch(`/api/jobs/${jobId}/approve`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to approve');
+    showToast('Job approved for submission package', 'success');
+    fetchJobs();
+    fetchStats();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function quickReject(jobId, e) {
+  if (e) e.stopPropagation();
+  try {
+    const res = await fetch(`/api/jobs/${jobId}/reject`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to reject');
+    showToast('Job marked as rejected', 'info');
+    fetchJobs();
+    fetchStats();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// Job Inspection Drawer & Human-in-the-Loop Review (Section 9)
+async function openJobDrawer(jobId) {
+  const job = state.jobs.find(j => String(j.id) === String(jobId));
+  if (!job) return;
+  state.selectedJob = job;
+
+  document.getElementById('drawerTitle').textContent = job.title;
+  document.getElementById('drawerCompanyLoc').textContent = `${job.company} • ${job.country || 'Remote'} • ${job.work_arrangement} (${job.source})`;
+  document.getElementById('drawerScore').textContent = job.relevance_score || 0;
+  document.getElementById('drawerExplanation').textContent = job.notes || 'Relevance calculated based on domain match and required qualifications.';
+
+  const roleBadge = document.getElementById('drawerRoleBadge');
+  const pid = (job.role_category || job.profile_id || 'AI_ENGINEER').toUpperCase();
+  roleBadge.textContent = pid;
+  roleBadge.className = `badge-role ${pid.includes('TEST') ? 'badge-test' : (pid.includes('BOTH') ? 'badge-both' : 'badge-ai')}`;
+
+  // Matched Skills
+  const matchedWrap = document.getElementById('drawerMatchedSkills');
+  matchedWrap.innerHTML = '';
+  if (job.matched_skills) {
+    job.matched_skills.split(',').forEach(s => {
+      if (s.trim()) {
+        const chip = document.createElement('span');
+        chip.className = 'skill-chip';
+        chip.textContent = `✓ ${s.trim()}`;
+        matchedWrap.appendChild(chip);
+      }
+    });
+  }
+
+  // Missing Skills
+  const missingWrap = document.getElementById('drawerMissingSkills');
+  missingWrap.innerHTML = '';
+  if (job.missing_skills) {
+    job.missing_skills.split(',').slice(0, 5).forEach(s => {
+      if (s.trim()) {
+        const chip = document.createElement('span');
+        chip.className = 'missing-chip';
+        chip.textContent = `Missing: ${s.trim()}`;
+        missingWrap.appendChild(chip);
+      }
+    });
+  }
+
+  // Resume Download link
+  const resumeDownload = document.getElementById('drawerResumeDownload');
+  const targetPid = pid.includes('TEST') ? 'TEST_ENGINEER' : 'AI_ENGINEER';
+  resumeDownload.href = `/api/resume/${targetPid}`;
+  document.getElementById('drawerResumeName').textContent = targetPid === 'TEST_ENGINEER' ? 'Kamalesan_C_Test_Engineer_Resume.pdf' : 'Kamalesan_C_AI_Engineer_Resume.pdf';
+
+  // Description
+  document.getElementById('drawerDescription').textContent = job.description || 'No extended description available.';
+
+  // External link
+  const extLink = document.getElementById('drawerExternalLink');
+  extLink.href = job.url || '#';
+
+  // Load Tailored Cover Letter
+  loadDrawerCoverLetter(job.id);
+
+  // Show Drawer
+  document.getElementById('jobDrawerOverlay').style.display = 'flex';
+}
+
+function closeJobDrawer(e) {
+  if (e && e.target !== e.currentTarget && e.target.id !== 'jobDrawerOverlay') return;
+  document.getElementById('jobDrawerOverlay').style.display = 'none';
+  state.selectedJob = null;
+}
+
+async function loadDrawerCoverLetter(jobId) {
+  const box = document.getElementById('drawerCoverLetterText');
+  box.value = 'Loading tailored cover letter...';
 
   try {
-    const res = await fetch("/api/apply", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch(`/api/jobs/${jobId}/cover-letter`);
+    if (!res.ok) throw new Error('Could not load cover letter');
+    const data = await res.json();
+    box.value = data.cover_letter || '';
+  } catch (err) {
+    box.value = 'Failed to load cover letter: ' + err.message;
+  }
+}
+
+async function regenerateDrawerDocs() {
+  if (!state.selectedJob) return;
+  showToast('Regenerating tailored documents...', 'info');
+  try {
+    const res = await fetch(`/api/jobs/${state.selectedJob.id}/generate-documents`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed');
+    document.getElementById('drawerCoverLetterText').value = data.cover_letter || '';
+    showToast('Cover letter and ATS resume package updated!', 'success');
+    fetchJobs();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function approveCurrentJob() {
+  if (!state.selectedJob) return;
+  await quickApprove(state.selectedJob.id);
+  closeJobDrawer();
+}
+
+async function rejectCurrentJob() {
+  if (!state.selectedJob) return;
+  await quickReject(state.selectedJob.id);
+  closeJobDrawer();
+}
+
+async function launchPlaywrightApply() {
+  if (!state.selectedJob) return;
+  const job = state.selectedJob;
+
+  if (!confirm(`Launch Playwright browser assistant for ${job.title} at ${job.company}?\n\nExplicit approval will be recorded.`)) {
+    return;
+  }
+
+  try {
+    const payload = {
+      job_id: job.id,
+      job_url: job.url,
+      job_title: job.title,
+      company_name: job.company,
+      job_description: job.description,
+      profile_id: job.profile_id,
+      headless: false,
+      dry_run: true,
+      auto_submit: false,
+      explicit_approval: true
+    };
+
+    const res = await fetch('/api/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to trigger apply');
+
+    showToast(data.message, 'success');
+    closeJobDrawer();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// Background Search Polling
+async function triggerSearch() {
+  const btn = document.getElementById('btn-run-search');
+  const spinner = document.getElementById('search-spinner');
+  btn.disabled = true;
+  if (spinner) spinner.style.display = 'inline-block';
+
+  try {
+    const res = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile: state.activeProfile })
+    });
+    const data = await res.json();
+    showToast(data.message, 'info');
+    pollSearchStatus();
+  } catch (err) {
+    showToast(err.message, 'error');
+    btn.disabled = false;
+    if (spinner) spinner.style.display = 'none';
+  }
+}
+
+function pollSearchStatus() {
+  const banner = document.getElementById('search-task-banner');
+  const bannerText = document.getElementById('search-task-text');
+  const btn = document.getElementById('btn-run-search');
+  const spinner = document.getElementById('search-spinner');
+
+  if (state.searchPollingInterval) clearInterval(state.searchPollingInterval);
+
+  state.searchPollingInterval = setInterval(async () => {
+    try {
+      const res = await fetch('/api/stats');
+      const data = await res.json();
+      const task = data.search_task;
+
+      if (task && task.status === 'running') {
+        if (banner) banner.style.display = 'flex';
+        if (bannerText) bannerText.textContent = task.message || 'Job search running...';
+        if (btn) btn.disabled = true;
+        if (spinner) spinner.style.display = 'inline-block';
+      } else {
+        if (banner) banner.style.display = 'none';
+        if (btn) btn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+        clearInterval(state.searchPollingInterval);
+
+        if (task && task.status === 'completed') {
+          showToast(task.message, 'success');
+          fetchStats();
+          fetchJobs();
+        }
+      }
+    } catch (e) {
+      clearInterval(state.searchPollingInterval);
+    }
+  }, 3000);
+}
+
+// Cover Letter Studio Tab
+async function generateStudioCoverLetter() {
+  const profileId = document.getElementById('clProfileSelect').value;
+  const company = document.getElementById('clCompanyInput').value.trim();
+  const title = document.getElementById('clTitleInput').value.trim();
+  const desc = document.getElementById('clDescInput').value.trim();
+
+  if (!company || !title) {
+    showToast('Please enter both company name and job title', 'warning');
+    return;
+  }
+
+  showToast('Generating tailored cover letter...', 'info');
+  try {
+    const res = await fetch('/api/cover-letter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        job_url: url,
-        job_title: title,
         company_name: company,
-        headless: headless,
-        dry_run: dryRun,
-        auto_submit: autoSubmit
+        job_title: title,
+        job_description: desc,
+        profile_id: profileId
       })
     });
     const data = await res.json();
-    showToast(data.message);
-    logTerminal(`[AGENT] ${data.message}`);
+    document.getElementById('clOutputText').value = data.cover_letter || '';
+    showToast(`Letter generated and saved into ${profileId} documents!`, 'success');
   } catch (err) {
-    logTerminal(`[ERROR] Direct apply failed: ${err}`);
-  } finally {
-    btn.disabled = false;
-    spinner.style.display = "none";
+    showToast(err.message, 'error');
   }
 }
 
-// ---------------- Search Trigger ----------------
-async function triggerSearch() {
-  const btn = document.getElementById("btn-run-search");
-  const spinner = document.getElementById("search-spinner");
-  btn.disabled = true;
-  spinner.style.display = "inline-block";
-
-  logTerminal(`[SEARCH] Triggering crawler for LinkedIn and EU Remote Jobs...`);
-  showToast("Crawling job boards for new AI listings...");
-
-  try {
-    const res = await fetch("/api/search", { method: "POST" });
-    const data = await res.json();
-    logTerminal(`[SEARCH] ${data.message}`);
-  } catch (err) {
-    logTerminal(`[SEARCH ERROR] ${err}`);
-  } finally {
-    setTimeout(() => {
-      btn.disabled = false;
-      spinner.style.display = "none";
-      fetchJobs();
-      fetchStats();
-    }, 4000);
-  }
+function copyCoverLetterText() {
+  const text = document.getElementById('clOutputText').value;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Cover letter copied to clipboard!', 'success');
+  });
 }
 
-// ---------------- Cover Letter ----------------
-async function previewCoverLetter(title, company) {
+// Recruiter Outreach Tab
+async function generateOutreachNotes() {
+  const recruiter = document.getElementById('outreachRecruiterName').value.trim();
+  const company = document.getElementById('outreachCompany').value.trim();
+  const role = document.getElementById('outreachRole').value.trim();
+
   try {
-    const res = await fetch("/api/cover-letter", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ job_title: title, company_name: company })
+    const res = await fetch('/api/outreach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recruiter_name: recruiter,
+        company_name: company,
+        role_title: role
+      })
     });
     const data = await res.json();
-    document.getElementById("modal-cl-title").textContent = `Cover Letter: ${title} @ ${company}`;
-    document.getElementById("modal-cl-text").textContent = data.cover_letter;
-    openModal("modal-cover-letter");
+    document.getElementById('outreachLinkedInNote').value = data.linkedin_note || '';
+    document.getElementById('outreachInMail').value = data.linkedin_inmail || '';
+    document.getElementById('outreachEmailSub').value = data.cold_email_subject || '';
+    document.getElementById('outreachEmailBody').value = data.cold_email_body || '';
+    showToast('Outreach communications generated!', 'success');
   } catch (err) {
-    console.error(err);
+    showToast(err.message, 'error');
   }
 }
 
-function previewDirectCoverLetter() {
-  const title = document.getElementById("apply-title").value.trim() || "AI Engineer";
-  const company = document.getElementById("apply-company").value.trim() || "Target Company";
-  previewCoverLetter(title, company);
-}
+// Schedule Settings Tab
+async function saveScheduleSettings() {
+  const mode = document.getElementById('schedModeSelect').value;
+  const timeVal = document.getElementById('schedTimeInput').value;
 
-// ---------------- Outreach ----------------
-async function previewOutreach(company, role) {
   try {
-    const res = await fetch("/api/outreach", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recruiter_name: "Hiring Manager", company_name: company, role_title: role })
+    const res = await fetch('/api/config');
+    const conf = await res.json();
+    conf.schedule = {
+      enabled: mode === 'daily',
+      mode: mode,
+      daily_time: timeVal
+    };
+
+    const putRes = await fetch('/api/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(conf)
     });
-    const data = await res.json();
-    document.getElementById("modal-outreach-title").textContent = `Outreach: ${role} @ ${company}`;
-    document.getElementById("modal-outreach-note").textContent = data.linkedin_note;
-    document.getElementById("modal-outreach-inmail").textContent = data.linkedin_inmail;
-    openModal("modal-outreach");
+    if (!putRes.ok) throw new Error('Failed to update config');
+    showToast('Schedule settings saved successfully!', 'success');
   } catch (err) {
-    console.error(err);
+    showToast(err.message, 'error');
   }
 }
 
-async function generateOutreachStudio() {
-  const name = document.getElementById("outreach-name").value.trim() || "Hiring Manager";
-  const company = document.getElementById("outreach-company").value.trim() || "Target Company";
-  const role = document.getElementById("outreach-role").value.trim() || "AI Engineer";
+// Toast Notifications
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
 
-  try {
-    const res = await fetch("/api/outreach", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recruiter_name: name, company_name: company, role_title: role })
-    });
-    const data = await res.json();
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  let icon = 'ℹ️';
+  if (type === 'success') icon = '✅';
+  if (type === 'error') icon = '❌';
+  if (type === 'warning') icon = '⚠️';
 
-    document.getElementById("outreach-note-box").textContent = data.linkedin_note;
-    document.getElementById("outreach-inmail-box").textContent = data.linkedin_inmail;
-    document.getElementById("outreach-email-subject").textContent = `Subject: ${data.cold_email_subject}`;
-    document.getElementById("outreach-email-body").textContent = data.cold_email_body;
+  toast.innerHTML = `<span>${icon}</span> <span>${escapeHtml(message)}</span>`;
+  container.appendChild(toast);
 
-    document.getElementById("outreach-results").style.display = "block";
-    showToast("Outreach messages generated!");
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// ---------------- Profile ----------------
-async function fetchProfile() {
-  try {
-    const res = await fetch("/api/profile");
-    const data = await res.json();
-
-    const p = data.personal || {};
-    document.getElementById("prof-name").value = `${p.first_name || ""} ${p.last_name || ""}`.trim();
-    document.getElementById("prof-email").value = p.email || "";
-    document.getElementById("prof-phone").value = p.phone || "";
-    document.getElementById("prof-location").value = `${p.city || ""}, ${p.state || ""}, ${p.country || ""}`;
-
-    const l = data.links || {};
-    document.getElementById("prof-linkedin").value = l.linkedin || "";
-    document.getElementById("prof-github").value = l.github || "";
-
-    const w = data.work_authorization || {};
-    document.getElementById("prof-auth").value = `${w.visa_status || ""} | Open to Relocation: ${w.open_to_relocation || "Yes"}`;
-
-    const d = data.documents || {};
-    document.getElementById("prof-coverletter").value = d.default_cover_letter || "";
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-async function regenerateResumePdf() {
-  const spinner = document.getElementById("regen-spinner");
-  spinner.style.display = "inline-block";
-  showToast("Recompiling resume PDF with Playwright...");
-  try {
-    const res = await fetch("/api/resume/regenerate", { method: "POST" });
-    const data = await res.json();
-    showToast(data.message);
-    logTerminal(`[RESUME] ${data.message}`);
-    // Reload iframe
-    const iframe = document.querySelector("#tab-profile iframe");
-    if (iframe) iframe.src = "/api/resume?" + new Date().getTime();
-  } catch (err) {
-    logTerminal(`[ERROR] Resume regeneration failed: ${err}`);
-  } finally {
-    spinner.style.display = "none";
-  }
-}
-
-// ---------------- Polling ----------------
-async function pollTasks() {
-  try {
-    const res = await fetch("/api/stats");
-    const data = await res.json();
-
-    if (data.search_task?.status === "completed" && data.search_task?.last_run !== "logged") {
-      logTerminal(`[SEARCH FINISHED] ${data.search_task.message}`);
-      data.search_task.last_run = "logged";
-      fetchJobs();
-    }
-    if (data.apply_task?.status === "completed" && data.apply_task?.last_run !== "logged") {
-      logTerminal(`[APPLY FINISHED] ${data.apply_task.message}`);
-      data.apply_task.last_run = "logged";
-      fetchJobs();
-      fetchStats();
-    }
-
-    // Read recent logs
-    const lRes = await fetch("/api/logs");
-    const lData = await lRes.json();
-    if (lData.apply && lData.apply.length > 0) {
-      const lastLine = lData.apply[lData.apply.length - 1];
-      if (!window.lastLoggedLine || window.lastLoggedLine !== lastLine) {
-        window.lastLoggedLine = lastLine;
-        logTerminal(`[AGENT LOG] ${lastLine.trim()}`);
-      }
-    }
-  } catch (e) {}
-}
-
-// ---------------- Helpers ----------------
-function logTerminal(msg) {
-  const body = document.getElementById("terminal-body");
-  const time = new Date().toLocaleTimeString();
-  body.textContent += `\n[${time}] ${msg}`;
-  body.scrollTop = body.scrollHeight;
-}
-
-function updateTerminalStatus(text, isBusy) {
-  const el = document.getElementById("terminal-status");
-  el.textContent = text;
-  el.style.color = isBusy ? "#38bdf8" : "var(--text-faint)";
-}
-
-function openModal(id) {
-  document.getElementById(id).classList.add("open");
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove("open");
-}
-
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2800);
-}
-
-function copyFromElement(id) {
-  const text = document.getElementById(id).textContent;
-  navigator.clipboard.writeText(text);
-  showToast("Copied to clipboard!");
-}
-
-function copyColdEmail() {
-  const subj = document.getElementById("outreach-email-subject").textContent;
-  const body = document.getElementById("outreach-email-body").textContent;
-  navigator.clipboard.writeText(`${subj}\n\n${body}`);
-  showToast("Subject & Email copied!");
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
 }
 
 function escapeHtml(str) {
-  if (!str) return "";
-  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-function escapeAttr(str) {
-  if (!str) return "";
-  return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }

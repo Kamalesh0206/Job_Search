@@ -1,0 +1,250 @@
+{
+  "system": {
+    "current_hostname": "Kamalesh",
+    "last_rename_attempt": {
+      "requested_name": "KAMALESH-AI",
+      "requested_at": "2026-10-11 09:31:22",
+      "status": "Initiated"
+    },
+    "last_update": "KB5129195 (05-10-2026)"
+  },
+  "users": [
+    {
+      "id": "usr-001",
+      "username": "kamalesan",
+      "full_name": "Kamalesan C",
+      "email": "kamaleshcai686@gmail.com",
+      "role": "Super Admin",
+      "department": "Engineering & AI",
+      "status": "Active",
+      "two_factor": true,
+      "created_at": "2026-08-01 10:00:00",
+      "last_login": "2026-10-11 09:12:00",
+      "avatar_color": "#6366f1"
+    },
+    {
+      "id": "usr-002",
+      "username": "softk_admin",
+      "full_name": "SoftK Systems Admin",
+      "email": "softkamalesh@gmail.com",
+      "role": "Infrastructure Admin",
+      "department": "Cloud & Operations",
+      "status": "Active",
+      "two_factor": true,
+      "created_at": "2026-08-05 14:20:00",
+      "last_login": "2026-10-11 08:45:00",
+      "avatar_color": "#06b6d4"
+    },
+    {
+      "id": "usr-003",
+      "username": "alex.dev",
+      "full_name": "Alex Mercer",
+      "email": "alex.m@system.local",
+      "role": "DevOps Engineer",
+      "department": "Site Reliability",
+      "status": "Active",
+      "two_factor": false,
+      "created_at": "2026-09-12 11:30:00",
+      "last_login": "2026-10-10 18:22:00",
+      "avatar_color": "#10b981"
+    },
+    {
+      "id": "usr-004",
+      "username": "priya.sec",
+      "full_name": "Priya Sharma",
+      "email": "priya.security@system.local",
+      "role": "Security Auditor",
+      "department": "InfoSec Compliance",
+      "status": "Active",
+      "two_factor": true,
+      "created_at": "2026-09-20 09:15:00",
+      "last_login": "2026-10-09 14:10:00",
+      "avatar_color": "#ec4899"
+    },
+    {
+      "id": "usr-005",
+      "username": "operator.ops",
+      "full_name": "Ops Automation Bot",
+      "email": "bot.runner@system.local",
+      "role": "Application Operator",
+      "department": "Job Automation",
+      "status": "Active",
+      "two_factor": false,
+      "created_at": "2026-10-01 16:00:00",
+      "last_login": "2026-10-11 07:30:00",
+      "avatar_color": "#f59e0b"
+    },
+    {
+      "id": "usr-006",
+      "username": "guest.reviewer",
+      "full_name": "External Reviewer",
+      "email": "reviewer@partner.org",
+      "role": "Viewer",
+      "department": "External Audit",
+      "status": "Inactive",
+      "two_factor": false,
+      "created_at": "2026-10-05 13:00:00",
+      "last_login": "2026-10-06 10:15:00",
+      "avatar_color": "#94a3b8"
+    }
+  ],
+  "roles": [
+    {
+      "name": "Super Admin",
+      "description": "Full access to all system privileges, user management, and host renaming",
+      "users_count": 1,
+      "badge_color": "purple",
+      "permissions": [
+        "users:create",
+        "users:read",
+        "users:update",
+        "users:delete",
+        "system:host_rename",
+        "system:view_telemetry",
+        "roles:assign",
+        "tokens:manage",
+        "audit:export"
+      ]
+    },
+    {
+      "name": "Infrastructure Admin",
+      "description": "Manage host system configurations, network endpoints, and system naming",
+      "users_count": 1,
+      "badge_color": "blue",
+      "permissions": [
+        "users:read",
+        "users:update",
+        "system:host_rename",
+        "system:view_telemetry",
+        "tokens:manage",
+        "audit:view"
+      ]
+    },
+    {
+      "name": "DevOps Engineer",
+      "description": "Deploy automation services and manage API credentials",
+      "users_count": 1,
+      "badge_color": "cyan",
+      "permissions": [
+        "users:read",
+        "system:view_telemetry",
+        "tokens:manage",
+        "audit:view"
+      ]
+    },
+    {
+      "name": "Security Auditor",
+      "description": "Read-only access across all logs, telemetry, and access policies",
+      "users_count": 1,
+      "badge_color": "pink",
+      "permissions": [
+        "users:read",
+        "roles:view",
+        "audit:view",
+        "audit:export",
+        "system:view_telemetry"
+      ]
+    },
+    {
+      "name": "Application Operator",
+      "description": "Run automation jobs and manage local profiles",
+      "users_count": 1,
+      "badge_color": "amber",
+      "permissions": [
+        "users:read",
+        "system:view_telemetry"
+      ]
+    },
+    {
+      "name": "Viewer",
+      "description": "Read-only view of dashboard status and users",
+      "users_count": 1,
+      "badge_color": "slate",
+      "permissions": [
+        "users:read"
+      ]
+    }
+  ],
+  "activity_logs": [
+    {
+      "id": "act-006",
+      "timestamp": "2026-10-11 09:31:22",
+      "user": "Admin",
+      "action": "Hostname Rename Requested",
+      "target": "Target: KAMALESH-AI (Requires Elevation)",
+      "ip": "127.0.0.1",
+      "status": "Success",
+      "severity": "info"
+    },
+    {
+      "id": "act-001",
+      "timestamp": "2026-10-11 09:12:00",
+      "user": "kamalesan",
+      "action": "User Sign-In",
+      "target": "Dashboard Web Console",
+      "ip": "192.168.0.134",
+      "status": "Success",
+      "severity": "info"
+    },
+    {
+      "id": "act-002",
+      "timestamp": "2026-10-11 09:05:14",
+      "user": "kamalesan",
+      "action": "Query System Hostname",
+      "target": "Host: Kamalesh",
+      "ip": "127.0.0.1",
+      "status": "Success",
+      "severity": "info"
+    },
+    {
+      "id": "act-003",
+      "timestamp": "2026-10-10 20:14:21",
+      "user": "softk_admin",
+      "action": "File Modification",
+      "target": "generate_resume_pdf.py",
+      "ip": "127.0.0.1",
+      "status": "Success",
+      "severity": "warning"
+    },
+    {
+      "id": "act-004",
+      "timestamp": "2026-10-10 20:04:49",
+      "user": "kamalesan",
+      "action": "Git Commit",
+      "target": "Dashboard FastAPI launcher [75570c2]",
+      "ip": "127.0.0.1",
+      "status": "Success",
+      "severity": "info"
+    },
+    {
+      "id": "act-005",
+      "timestamp": "2026-10-05 00:00:00",
+      "user": "NT AUTHORITY\\SYSTEM",
+      "action": "OS Update Installed",
+      "target": "KB5129195 Security Update",
+      "ip": "localhost",
+      "status": "Success",
+      "severity": "info"
+    }
+  ],
+  "tokens": [
+    {
+      "id": "tok-001",
+      "name": "CI-CD Deployment Token",
+      "prefix": "agt_live_9f82...",
+      "role": "DevOps Engineer",
+      "created_at": "2026-09-15",
+      "last_used": "2026-10-10",
+      "status": "Active"
+    },
+    {
+      "id": "tok-002",
+      "name": "Job Apply Bot Agent Key",
+      "prefix": "agt_bot_4a11...",
+      "role": "Application Operator",
+      "created_at": "2026-10-01",
+      "last_used": "2026-10-11",
+      "status": "Active"
+    }
+  ]
+}

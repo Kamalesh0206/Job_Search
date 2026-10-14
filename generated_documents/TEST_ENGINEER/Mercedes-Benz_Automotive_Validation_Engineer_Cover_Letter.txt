@@ -1,0 +1,16 @@
+Dear Hiring Manager,
+
+I am writing to express my strong interest in the Automotive Validation Engineer position at Mercedes-Benz. With 7.4 years of specialized engineering experience in automotive ECU validation, Hardware-in-the-Loop (HIL) and Software-in-the-Loop (SIL) testing, and Python-based test automation, I bring extensive domain expertise in verifying mission-critical automotive software systems.
+
+Currently working at Capgemini Technology Services in collaboration with Bosch Global Software Technologies, I have contributed extensively to Mercedes-Benz powertrain ECU validation programs. My core technical capabilities include automated test creation in TraceTronic ECU-TEST, hardware bench integration with dSPACE SCALEXIO and ETAS LABCAR, network bus analysis (CAN, LIN, FlexRay, Automotive Ethernet), and UDS (ISO 14229) diagnostic protocol testing with Vector CANoe and ETAS INCA. I have developed custom Python automation utilities to parse diagnostic fault codes and generate automated compliance metrics, measurably accelerating test cycles.
+
+I am enthusiastic about bringing my hands-on validation rigor, test automation framework design skills, and defect-analysis depth to the engineering initiatives at Mercedes-Benz.
+
+I am based in India and am open to worldwide remote opportunities as well as on-site positions offering international relocation and work visa sponsorship.
+
+Thank you for your time and consideration. I welcome the opportunity to discuss how my automotive validation background aligns with your team's objectives.
+
+Sincerely,
+Kamalesan C
+Senior Automotive Test Engineer | HIL/SIL Testing & Python Automation
+Email: kamaleshcai686@gmail.com | Phone: +91 7305131264
