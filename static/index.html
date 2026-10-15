@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css?v=2.2.0">
+  <link rel="stylesheet" href="/static/style.css?v=2.3.0">
 </head>
 <body>
   <div class="ambient-glow-1"></div>
@@ -18,18 +18,35 @@
     
     <!-- Header Bar -->
     <header class="header-bar">
-      <!-- Dynamic Profile Header Container (Loaded via API) -->
+      <!-- Dynamic Profile Header Container (Loaded via API with server-rendered initial state) -->
       <div id="headerProfileContainer" class="header-profile-container">
-        <div class="candidate-profile-block">
-          <div class="avatar-circle">KC</div>
-          <div>
-            <div class="candidate-name">
-              Kamalesan C
-              <span class="badge-tag">Dual-Role Engineer</span>
-              <span class="badge-tag badge-purple">7.4y Experience</span>
+        <div class="dual-profile-cards">
+          <div class="profile-summary-card ai-card">
+            <div class="card-top">
+              <span class="card-name">Kamalesan C</span>
+              <span class="badge-tag">AI Engineer • 7.4y Exp</span>
             </div>
-            <div class="candidate-meta" id="headerProfileMeta">
-              <span>Loading profile details...</span>
+            <div class="card-meta">
+              <div>📍 Coimbatore, India • 📞 +91 7305131264</div>
+              <div>
+                <a href="mailto:kamaleshcai686@gmail.com">✉️ kamaleshcai686@gmail.com</a> •
+                <a href="https://www.linkedin.com/in/kamalesan-c-546646442" target="_blank" rel="noopener">LinkedIn</a> •
+                <a href="https://github.com/Kamalesh0206" target="_blank" rel="noopener">GitHub</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-summary-card test-card">
+            <div class="card-top">
+              <span class="card-name">Kamalesan C</span>
+              <span class="badge-tag" style="background: hsla(158, 64%, 45%, 0.2); color: #34d399; border-color: hsla(158, 64%, 45%, 0.35);">Test Engineer • 7.4y Exp</span>
+            </div>
+            <div class="card-meta">
+              <div>📍 Coimbatore, Tamil Nadu, India • 📞 +91 98436 19970</div>
+              <div>
+                <a href="mailto:softkamalesh@gmail.com">✉️ softkamalesh@gmail.com</a> •
+                <a href="https://www.linkedin.com/in/kamalesh-chinnathambi-62b952299" target="_blank" rel="noopener">LinkedIn</a>
+              </div>
             </div>
           </div>
         </div>
@@ -131,6 +148,9 @@
       <button class="tab-btn active" onclick="switchTab('jobs')">
         💼 Live Job Tracker (<span id="tabCountJobs">0</span>)
       </button>
+      <button class="tab-btn" onclick="switchTab('skills-roles')">
+        ⚙️ Skills & Roles Settings
+      </button>
       <button class="tab-btn" onclick="switchTab('resumes')">
         📄 ATS Resumes & Portfolios
       </button>
@@ -142,9 +162,6 @@
       </button>
       <button class="tab-btn" onclick="switchTab('schedule-tab')">
         ⏱️ Automation Schedule & Sources
-      </button>
-      <button class="tab-btn" onclick="switchTab('skills-roles')">
-        ⚙️ Skills & Roles Settings
       </button>
     </nav>
 
@@ -209,6 +226,14 @@
             <option value="60">Score 60+ (Relevant)</option>
             <option value="75">Score 75+ (High Match)</option>
             <option value="85">Score 85+ (Top Tier)</option>
+          </select>
+
+          <!-- Posting Date Filter (Section 9) -->
+          <select id="filterPostingDate" class="select-filter" onchange="applyFilters()">
+            <option value="All">All Posting Dates</option>
+            <option value="today">Found / Posted Today</option>
+            <option value="7d">Past 7 Days</option>
+            <option value="30d">Past 30 Days</option>
           </select>
         </div>
       </div>
@@ -489,18 +514,39 @@
               <input type="url" id="setContactGithub" class="form-input" placeholder="e.g. https://github.com/...">
             </div>
 
-            <h4 style="color: #a855f7; margin-top: 24px; margin-bottom: 12px;">Automation Rules & Thresholds</h4>
+            <h4 style="color: #a855f7; margin-top: 24px; margin-bottom: 12px;">Automation Rules & Thresholds (Section 9)</h4>
             <div style="background: hsla(222, 40%, 12%, 0.8); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <label style="font-weight: 700; color: #fff; margin: 0; cursor: pointer;" for="setAutoApplyEnabled">
-                  Enable Automatic Applications
+                  Enable Automatic Applications for Profile
                 </label>
                 <input type="checkbox" id="setAutoApplyEnabled" style="width: 20px; height: 20px; cursor: pointer;">
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
+              <div class="form-group" style="margin-bottom: 10px;">
                 <label>Skill Matching Threshold (%)</label>
                 <input type="number" id="setMatchThreshold" class="form-input" min="50" max="95" value="70">
-                <small style="color: var(--text-dim); display: block; margin-top: 4px;">Rule: Submit automatically IF match_score &gt; 70% and eligibility passes. If &lt;= 70%, places in manual review queue.</small>
+                <small style="color: var(--text-dim); display: block; margin-top: 2px;">Rule: Submit automatically IF match_score &gt; 70% and eligibility passes. If &lt;= 70%, places in manual review queue.</small>
+              </div>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label>Maximum Applications Per Day</label>
+                <input type="number" id="setMaxAppsPerDay" class="form-input" min="1" max="50" value="10">
+              </div>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label>Allowed Job Sources</label>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.82rem; color: #cbd5e1; margin-top: 4px;">
+                  <label><input type="checkbox" checked id="srcRemotive"> Remotive</label>
+                  <label><input type="checkbox" checked id="srcArbeitnow"> Arbeitnow</label>
+                  <label><input type="checkbox" checked id="srcEURemote"> EU Remote Jobs</label>
+                  <label><input type="checkbox" checked id="srcLinkedIn"> LinkedIn</label>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label>Allowed Target Countries</label>
+                <input type="text" id="setAllowedCountries" class="form-input" value="Worldwide Remote, Germany, USA, UK, India, Global">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Minimum Eligibility Requirements</label>
+                <input type="text" id="setMinEligibility" class="form-input" value="7.4 Years Experience, Visa Sponsorship or Remote">
               </div>
             </div>
 
@@ -621,6 +667,6 @@
 
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="/static/app.js?v=2.2.0"></script>
+  <script src="/static/app.js?v=2.3.0"></script>
 </body>
 </html>

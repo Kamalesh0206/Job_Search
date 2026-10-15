@@ -81,6 +81,7 @@ const state = {
     country: 'All',
     workArrangement: 'All',
     sponsorship: 'All',
+    postingDate: 'All',
     minScore: 0,
     search: ''
   },
@@ -326,6 +327,7 @@ async function fetchJobs() {
   if (state.filters.country && state.filters.country !== 'All') params.append('country', state.filters.country);
   if (state.filters.workArrangement && state.filters.workArrangement !== 'All') params.append('work_arrangement', state.filters.workArrangement);
   if (state.filters.sponsorship && state.filters.sponsorship !== 'All') params.append('sponsorship', state.filters.sponsorship);
+  if (state.filters.postingDate && state.filters.postingDate !== 'All') params.append('posting_date', state.filters.postingDate);
   if (state.filters.minScore > 0) params.append('min_score', state.filters.minScore);
   if (state.filters.search) params.append('search', state.filters.search);
 
@@ -447,6 +449,8 @@ function applyFilters() {
   state.filters.country = document.getElementById('filterCountry').value;
   state.filters.workArrangement = document.getElementById('filterWorkArrangement').value;
   state.filters.sponsorship = document.getElementById('filterSponsorship').value;
+  const postingDateEl = document.getElementById('filterPostingDate');
+  if (postingDateEl) state.filters.postingDate = postingDateEl.value;
   state.filters.minScore = parseInt(document.getElementById('filterMinScore').value || '0');
   state.filters.search = document.getElementById('searchInput').value.trim();
 
@@ -853,6 +857,9 @@ function renderSettingsForm() {
   const ghInput = document.getElementById('setContactGithub');
   const autoApplyBox = document.getElementById('setAutoApplyEnabled');
   const threshInput = document.getElementById('setMatchThreshold');
+  const maxAppsInput = document.getElementById('setMaxAppsPerDay');
+  const countriesInput = document.getElementById('setAllowedCountries');
+  const minEligInput = document.getElementById('setMinEligibility');
 
   if (nameInput) nameInput.value = p.name || 'Kamalesan C';
   if (locInput) locInput.value = p.location || '';
@@ -862,6 +869,21 @@ function renderSettingsForm() {
   if (ghInput) ghInput.value = p.github || '';
   if (autoApplyBox) autoApplyBox.checked = Boolean(p.auto_apply_enabled);
   if (threshInput) threshInput.value = p.match_threshold || 70;
+  if (maxAppsInput) maxAppsInput.value = p.max_applications_per_day || 10;
+  if (countriesInput) {
+    countriesInput.value = Array.isArray(p.target_countries) ? p.target_countries.join(', ') : (p.target_countries || 'Worldwide Remote, Germany, USA, UK, India, Global');
+  }
+  if (minEligInput) minEligInput.value = p.min_eligibility || '7.4 Years Experience, Visa Sponsorship or Remote';
+
+  const sources = p.allowed_sources || ['remotive', 'arbeitnow', 'euremote', 'linkedin'];
+  const srcRemotive = document.getElementById('srcRemotive');
+  const srcArbeitnow = document.getElementById('srcArbeitnow');
+  const srcEURemote = document.getElementById('srcEURemote');
+  const srcLinkedIn = document.getElementById('srcLinkedIn');
+  if (srcRemotive) srcRemotive.checked = sources.includes('remotive');
+  if (srcArbeitnow) srcArbeitnow.checked = sources.includes('arbeitnow');
+  if (srcEURemote) srcEURemote.checked = sources.includes('euremote');
+  if (srcLinkedIn) srcLinkedIn.checked = sources.includes('linkedin');
 
   renderTitlesList();
   renderSkillsList();
@@ -1073,6 +1095,16 @@ async function saveActiveProfileSettings() {
   const ghVal = document.getElementById('setContactGithub').value.trim();
   const autoApply = document.getElementById('setAutoApplyEnabled').checked;
   const thresh = parseInt(document.getElementById('setMatchThreshold').value) || 70;
+  const maxApps = parseInt(document.getElementById('setMaxAppsPerDay')?.value) || 10;
+  const countriesVal = document.getElementById('setAllowedCountries')?.value || '';
+  const countriesArr = countriesVal.split(',').map(s => s.trim()).filter(Boolean);
+  const minEligVal = document.getElementById('setMinEligibility')?.value.trim() || '';
+
+  const allowedSources = [];
+  if (document.getElementById('srcRemotive')?.checked) allowedSources.push('remotive');
+  if (document.getElementById('srcArbeitnow')?.checked) allowedSources.push('arbeitnow');
+  if (document.getElementById('srcEURemote')?.checked) allowedSources.push('euremote');
+  if (document.getElementById('srcLinkedIn')?.checked) allowedSources.push('linkedin');
 
   const payload = {
     personal: {
@@ -1091,6 +1123,10 @@ async function saveActiveProfileSettings() {
     github: ghVal,
     auto_apply_enabled: autoApply,
     match_threshold: thresh,
+    max_applications_per_day: maxApps,
+    target_countries: countriesArr,
+    min_eligibility: minEligVal,
+    allowed_sources: allowedSources,
     target_roles: p.target_roles || [],
     technical_skills: p.technical_skills || [],
     skill_weights: p.skill_weights || {},

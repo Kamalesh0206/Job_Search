@@ -2,7 +2,7 @@ import os
 import sqlite3
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 
@@ -288,6 +288,7 @@ def get_all_jobs(
     sponsorship: Optional[str] = None,
     min_score: Optional[int] = None,
     search: Optional[str] = None,
+    posting_date: Optional[str] = None,
     limit: Optional[int] = None
 ) -> List[Dict[str, Any]]:
     conn, engine = get_connection()
@@ -326,6 +327,21 @@ def get_all_jobs(
         s_pat = f"%{search.lower()}%"
         conditions.append(f"(LOWER(job_title) LIKE {param_marker} OR LOWER(company) LIKE {param_marker} OR LOWER(country) LIKE {param_marker} OR LOWER(matched_skills) LIKE {param_marker})")
         params.extend([s_pat, s_pat, s_pat, s_pat])
+
+    if posting_date and posting_date != "All":
+        now_dt = datetime.now()
+        if posting_date == "today":
+            cutoff = now_dt.strftime("%Y-%m-%d")
+            conditions.append(f"(found_date >= {param_marker} OR posted_date >= {param_marker})")
+            params.extend([cutoff, cutoff])
+        elif posting_date == "7d":
+            cutoff = (now_dt - timedelta(days=7)).strftime("%Y-%m-%d")
+            conditions.append(f"(found_date >= {param_marker} OR posted_date >= {param_marker})")
+            params.extend([cutoff, cutoff])
+        elif posting_date == "30d":
+            cutoff = (now_dt - timedelta(days=30)).strftime("%Y-%m-%d")
+            conditions.append(f"(found_date >= {param_marker} OR posted_date >= {param_marker})")
+            params.extend([cutoff, cutoff])
 
     where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
     query = f"SELECT * FROM jobs{where_clause} ORDER BY found_date DESC, relevance_score DESC"

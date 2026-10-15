@@ -191,7 +191,7 @@ def health_check():
         "active_profiles": ["AI_ENGINEER", "TEST_ENGINEER"],
         "auth_required": AUTH_REQUIRED,
         "environment": os.environ.get("ENVIRONMENT", "production" if os.environ.get("PORT") else "development"),
-        "version": "2.1.0"
+        "version": "2.3.0"
     }
 
 @app.get("/api/auth/status")
@@ -241,6 +241,7 @@ def get_jobs(
     sponsorship: Optional[str] = Query(None),
     min_score: Optional[int] = Query(None),
     search: Optional[str] = Query(None),
+    posting_date: Optional[str] = Query(None),
     limit: Optional[int] = Query(500),
     _: bool = Depends(verify_authentication)
 ):
@@ -252,6 +253,7 @@ def get_jobs(
         sponsorship=sponsorship,
         min_score=min_score,
         search=search,
+        posting_date=posting_date,
         limit=limit
     )
 

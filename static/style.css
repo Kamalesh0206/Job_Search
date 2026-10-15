@@ -268,7 +268,7 @@ body {
   gap: 8px;
   border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 24px;
-  overflow-x: auto;
+  flex-wrap: wrap;
 }
 
 .tab-btn {
