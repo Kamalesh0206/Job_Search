@@ -17,6 +17,12 @@ EXCEL_PATH = ROOT / "Job_Search_Tracker.xlsx"
 
 logger = logging.getLogger(__name__)
 
+# Extended headers for Excel export including audit fields
+EXTENDED_HEADERS = list(HEADERS)
+for col in ["Submission Timestamp", "Submission Response", "Application Reference", "Error Details"]:
+    if col not in EXTENDED_HEADERS:
+        EXTENDED_HEADERS.append(col)
+
 def get_connection():
     db_url = os.environ.get("DATABASE_URL")
     if db_url and db_url.startswith("postgres"):
@@ -69,10 +75,21 @@ def init_db():
                 follow_up_date TEXT,
                 notes TEXT,
                 fingerprint TEXT UNIQUE,
+                submission_timestamp TEXT,
+                submission_response TEXT,
+                application_reference TEXT,
+                error_details TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        # Migration: add audit columns if missing
+        cursor.execute("PRAGMA table_info(jobs)")
+        existing_cols = {row[1] for row in cursor.fetchall()}
+        for col_name in ["submission_timestamp", "submission_response", "application_reference", "error_details"]:
+            if col_name not in existing_cols:
+                cursor.execute(f"ALTER TABLE jobs ADD COLUMN {col_name} TEXT")
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS search_logs (
@@ -131,6 +148,10 @@ def init_db():
                 follow_up_date TEXT,
                 notes TEXT,
                 fingerprint TEXT UNIQUE,
+                submission_timestamp TEXT,
+                submission_response TEXT,
+                application_reference TEXT,
+                error_details TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -241,7 +262,6 @@ def _seed_from_excel(conn, engine):
 
 def _row_to_dict(r: Any) -> Dict[str, Any]:
     d = dict(r)
-    # Bridge column naming differences between DB and frontend/API
     d["id"] = d.get("job_id", "")
     d["title"] = d.get("job_title", "")
     d["description"] = d.get("job_description", "")
@@ -336,7 +356,7 @@ def save_jobs_to_db(job_rows: List[Dict[str, Any]]) -> int:
     cursor = conn.cursor()
     inserted = 0
 
-    placeholders = ", ".join(["?"] * 31) if engine == "sqlite" else ", ".join(["%s"] * 31)
+    placeholders = ", ".join(["?"] * 35) if engine == "sqlite" else ", ".join(["%s"] * 35)
     insert_sql = f"""
         INSERT OR IGNORE INTO jobs (
             job_id, profile_id, role_category, job_title, company, country, city,
@@ -344,7 +364,8 @@ def save_jobs_to_db(job_rows: List[Dict[str, Any]]) -> int:
             experience_required, required_skills, matched_skills, missing_skills,
             job_description, job_url, source, posted_date, found_date, last_seen_date,
             relevance_score, resume_used, cover_letter_path, application_status,
-            application_date, recruiter_name, recruiter_contact, follow_up_date, notes, fingerprint
+            application_date, recruiter_name, recruiter_contact, follow_up_date, notes, fingerprint,
+            submission_timestamp, submission_response, application_reference, error_details
         ) VALUES ({placeholders})
     """ if engine == "sqlite" else f"""
         INSERT INTO jobs (
@@ -353,7 +374,8 @@ def save_jobs_to_db(job_rows: List[Dict[str, Any]]) -> int:
             experience_required, required_skills, matched_skills, missing_skills,
             job_description, job_url, source, posted_date, found_date, last_seen_date,
             relevance_score, resume_used, cover_letter_path, application_status,
-            application_date, recruiter_name, recruiter_contact, follow_up_date, notes, fingerprint
+            application_date, recruiter_name, recruiter_contact, follow_up_date, notes, fingerprint,
+            submission_timestamp, submission_response, application_reference, error_details
         ) VALUES ({placeholders}) ON CONFLICT (job_id) DO NOTHING
     """
 
@@ -366,7 +388,7 @@ def save_jobs_to_db(job_rows: List[Dict[str, Any]]) -> int:
         job_id = str(j.get("id") or j.get("job_id") or f"JOB-{curr_count:04d}")
         score_val = 0
         try:
-            score_val = int(j.get("relevance_score") or 0)
+            score_val = int(j.get("relevance_score") or j.get("match_score") or 0)
         except Exception:
             score_val = 0
 
@@ -401,7 +423,11 @@ def save_jobs_to_db(job_rows: List[Dict[str, Any]]) -> int:
             str(j.get("recruiter_contact", "")),
             str(j.get("follow_up_date", "")),
             str(j.get("notes", "")),
-            str(j.get("fingerprint", ""))
+            str(j.get("fingerprint", "")),
+            str(j.get("submission_timestamp", "")),
+            str(j.get("submission_response", "")),
+            str(j.get("application_reference", "")),
+            str(j.get("error_details", ""))
         )
         try:
             cursor.execute(insert_sql, vals)
@@ -412,7 +438,6 @@ def save_jobs_to_db(job_rows: List[Dict[str, Any]]) -> int:
     conn.commit()
     conn.close()
 
-    # Sync to Excel
     try:
         export_to_excel_file(EXCEL_PATH)
     except Exception as e:
@@ -433,6 +458,13 @@ def update_job_status_db(job_id: str, status: str, notes: Optional[str] = None) 
         sql = f"UPDATE jobs SET application_status = {param_marker}, updated_at = {param_marker} WHERE job_id = {param_marker}"
         cursor.execute(sql, (status, now_str, str(job_id)))
 
+    # Record application event in audit table
+    try:
+        sql_event = f"INSERT INTO application_events (job_id, event_type, timestamp, notes) VALUES ({param_marker}, {param_marker}, {param_marker}, {param_marker})"
+        cursor.execute(sql_event, (str(job_id), f"STATUS_{status}", now_str, notes or f"Status changed to {status}"))
+    except Exception:
+        pass
+
     rowcount = cursor.rowcount
     conn.commit()
     conn.close()
@@ -450,16 +482,26 @@ def update_job_application_db(
     resume_used: Optional[str] = None,
     cover_letter_path: Optional[str] = None,
     notes: Optional[str] = None,
-    application_date: Optional[str] = None
+    application_date: Optional[str] = None,
+    submission_timestamp: Optional[str] = None,
+    submission_response: Optional[str] = None,
+    application_reference: Optional[str] = None,
+    error_details: Optional[str] = None
 ) -> bool:
     conn, engine = get_connection()
     cursor = conn.cursor()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     app_date = application_date or datetime.now().strftime("%Y-%m-%d")
+    sub_time = submission_timestamp or now_str
     param_marker = "?" if engine == "sqlite" else "%s"
 
-    updates = [f"application_status = {param_marker}", f"application_date = {param_marker}", f"updated_at = {param_marker}"]
-    params = [status, app_date, now_str]
+    updates = [
+        f"application_status = {param_marker}",
+        f"application_date = {param_marker}",
+        f"submission_timestamp = {param_marker}",
+        f"updated_at = {param_marker}"
+    ]
+    params = [status, app_date, sub_time, now_str]
 
     if resume_used:
         updates.append(f"resume_used = {param_marker}")
@@ -470,12 +512,29 @@ def update_job_application_db(
     if notes:
         updates.append(f"notes = {param_marker}")
         params.append(notes)
+    if submission_response:
+        updates.append(f"submission_response = {param_marker}")
+        params.append(submission_response)
+    if application_reference:
+        updates.append(f"application_reference = {param_marker}")
+        params.append(application_reference)
+    if error_details:
+        updates.append(f"error_details = {param_marker}")
+        params.append(error_details)
 
     params.append(str(job_id))
     sql = f"UPDATE jobs SET {', '.join(updates)} WHERE job_id = {param_marker}"
 
     cursor.execute(sql, params)
     rowcount = cursor.rowcount
+
+    # Audit event record
+    try:
+        sql_event = f"INSERT INTO application_events (job_id, event_type, timestamp, notes) VALUES ({param_marker}, {param_marker}, {param_marker}, {param_marker})"
+        cursor.execute(sql_event, (str(job_id), f"APPLICATION_{status}", now_str, submission_response or error_details or notes or status))
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -508,24 +567,32 @@ def calculate_stats(all_jobs: List[Dict[str, Any]], profile_filter: Optional[str
 
     total = len(filtered)
     relevant = sum(1 for j in filtered if int(j.get("relevance_score", 0)) >= 60)
+    high_match = sum(1 for j in filtered if int(j.get("relevance_score", 0)) > 70)
     confirmed_sponsorship = sum(1 for j in filtered if j.get("visa_sponsorship_status", "").upper() == "CONFIRMED")
     remote_jobs = sum(1 for j in filtered if "remote" in j.get("work_arrangement", "").lower())
     applied = sum(1 for j in filtered if j.get("status", "").upper() == "APPLIED")
+    ready_to_apply = sum(1 for j in filtered if j.get("status", "").upper() in ("READY_TO_APPLY", "READY_FOR_REVIEW", "APPROVED"))
+    submission_failed = sum(1 for j in filtered if j.get("status", "").upper() == "SUBMISSION_FAILED")
+    manual_action_required = sum(1 for j in filtered if j.get("status", "").upper() == "MANUAL_ACTION_REQUIRED")
+    below_threshold = sum(1 for j in filtered if j.get("status", "").upper() == "BELOW_THRESHOLD")
     interviews = sum(1 for j in filtered if j.get("status", "").upper() == "INTERVIEW")
     rejections = sum(1 for j in filtered if j.get("status", "").upper() == "REJECTED")
-    ready_for_review = sum(1 for j in filtered if j.get("status", "").upper() == "READY_FOR_REVIEW")
-    approved = sum(1 for j in filtered if j.get("status", "").upper() == "APPROVED")
 
     return {
         "total_jobs": total,
         "relevant_jobs": relevant,
+        "high_match_jobs": high_match,
         "confirmed_sponsorship": confirmed_sponsorship,
         "remote_jobs": remote_jobs,
         "applications_submitted": applied,
+        "ready_to_apply": ready_to_apply,
+        "submission_failed": submission_failed,
+        "manual_action_required": manual_action_required,
+        "below_threshold": below_threshold,
         "interviews": interviews,
         "rejections": rejections,
-        "ready_for_review": ready_for_review,
-        "approved": approved
+        "ready_for_review": ready_to_apply,
+        "approved": ready_to_apply
     }
 
 def get_stats_db(profile_filter: Optional[str] = "ALL") -> Dict[str, Any]:
@@ -587,7 +654,7 @@ def export_to_excel_file(output_path: Path):
     wb = Workbook()
     ws = wb.active
     ws.title = "Jobs"
-    ws.append(HEADERS)
+    ws.append(EXTENDED_HEADERS)
 
     for r in rows:
         d = dict(r)
@@ -622,7 +689,11 @@ def export_to_excel_file(output_path: Path):
             d.get("recruiter_contact", ""),
             d.get("follow_up_date", ""),
             d.get("notes", ""),
-            d.get("fingerprint", "")
+            d.get("fingerprint", ""),
+            d.get("submission_timestamp", ""),
+            d.get("submission_response", ""),
+            d.get("application_reference", ""),
+            d.get("error_details", "")
         ])
 
     _format_worksheet(ws, ws.max_row)

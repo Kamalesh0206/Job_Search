@@ -18,20 +18,19 @@
     
     <!-- Header Bar -->
     <header class="header-bar">
-      <div class="candidate-profile-block">
-        <div class="avatar-circle">KC</div>
-        <div>
-          <div class="candidate-name">
-            Kamalesan C
-            <span class="badge-tag">Dual-Role Engineer</span>
-            <span class="badge-tag badge-purple">7.4y Experience</span>
-          </div>
-          <div class="candidate-meta">
-            <span>📍 Coimbatore, India</span>
-            <span>📞 +91 7305131264</span>
-            <a href="mailto:kamaleshcai686@gmail.com">✉️ kamaleshcai686@gmail.com</a>
-            <a href="https://www.linkedin.com/in/kamalesan-c-546646442" target="_blank" rel="noopener">🔗 LinkedIn Profile</a>
-            <a href="https://github.com/Kamalesh0206" target="_blank" rel="noopener">💻 GitHub Portfolio</a>
+      <!-- Dynamic Profile Header Container (Loaded via API) -->
+      <div id="headerProfileContainer" class="header-profile-container">
+        <div class="candidate-profile-block">
+          <div class="avatar-circle">KC</div>
+          <div>
+            <div class="candidate-name">
+              Kamalesan C
+              <span class="badge-tag">Dual-Role Engineer</span>
+              <span class="badge-tag badge-purple">7.4y Experience</span>
+            </div>
+            <div class="candidate-meta" id="headerProfileMeta">
+              <span>Loading profile details...</span>
+            </div>
           </div>
         </div>
       </div>
@@ -144,6 +143,9 @@
       <button class="tab-btn" onclick="switchTab('schedule-tab')">
         ⏱️ Automation Schedule & Sources
       </button>
+      <button class="tab-btn" onclick="switchTab('skills-roles')">
+        ⚙️ Skills & Roles Settings
+      </button>
     </nav>
 
     <!-- Tab 1: Live Job Tracker -->
@@ -163,17 +165,21 @@
             <option value="TEST_ENGINEER">Test Engineer Only</option>
           </select>
 
-          <!-- Status Filter -->
+          <!-- Status Filter (12 Discrete Statuses) -->
           <select id="filterStatus" class="select-filter" onchange="applyFilters()">
             <option value="All">All Statuses</option>
-            <option value="READY_FOR_REVIEW">Ready For Review</option>
-            <option value="APPROVED">Approved</option>
-            <option value="APPLIED">Applied</option>
-            <option value="SHORTLISTED">Shortlisted</option>
             <option value="DISCOVERED">Discovered</option>
+            <option value="SHORTLISTED">Shortlisted</option>
+            <option value="BELOW_THRESHOLD">Below Threshold</option>
+            <option value="READY_TO_APPLY">Ready To Apply</option>
+            <option value="SUBMISSION_PENDING">Submission Pending</option>
+            <option value="APPLIED">Applied</option>
+            <option value="SUBMISSION_FAILED">Submission Failed</option>
             <option value="INTERVIEW">Interview</option>
             <option value="REJECTED">Rejected</option>
             <option value="WITHDRAWN">Withdrawn</option>
+            <option value="CLOSED">Closed</option>
+            <option value="MANUAL_ACTION_REQUIRED">Manual Action Required</option>
           </select>
 
           <!-- Country Filter -->
@@ -221,10 +227,13 @@
               <th style="width: 50px;">Score</th>
               <th style="width: 120px;">Profile</th>
               <th>Job Title & Company</th>
-              <th>Location & Work Mode</th>
-              <th>Visa Status</th>
+              <th>Country & Mode</th>
+              <th>Job URL</th>
               <th>Matched Skills</th>
+              <th>Missing Skills</th>
+              <th>Visa Status</th>
               <th>Application Status</th>
+              <th>Date</th>
               <th style="text-align: right; width: 180px;">Actions</th>
             </tr>
           </thead>
@@ -421,6 +430,123 @@
       </div>
     </div>
 
+    <!-- Tab 6: Independent Skills & Roles Settings (Section 3 & 7) -->
+    <div id="tab-skills-roles" class="tab-pane">
+      <div class="studio-card">
+        <div class="studio-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3>Independent Role & Skills Configuration</h3>
+            <p>Manage personal contact details, target titles, technical skills, weights, and auto-apply rules separately for each profile.</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="profile-pill-btn active" id="settingsRoleBtnAI" onclick="selectSettingsProfile('AI_ENGINEER')">
+              🤖 AI Engineer Profile
+            </button>
+            <button class="profile-pill-btn" id="settingsRoleBtnTest" onclick="selectSettingsProfile('TEST_ENGINEER')">
+              🚗 Test Engineer Profile
+            </button>
+          </div>
+        </div>
+
+        <!-- Auto Apply Warning Banner (Section 7) -->
+        <div class="warning-banner" style="background: hsla(38, 92%, 50%, 0.12); border: 1px solid hsla(38, 92%, 50%, 0.35); border-radius: 8px; padding: 14px 18px; margin: 16px 0; display: flex; align-items: flex-start; gap: 12px;">
+          <span style="font-size: 1.4rem;">⚠️</span>
+          <div>
+            <strong style="color: #fcd34d;">Automatic Submission Policy Warning:</strong>
+            <p style="color: #cbd5e1; font-size: 0.85rem; margin-top: 2px;">
+              Automatic application submits your personal information and application documents directly to employers without individual confirmation whenever a job matches with &gt; 70% relevance and passes all eligibility checks.
+            </p>
+          </div>
+        </div>
+
+        <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px;">
+          
+          <!-- Column 1: Personal Contact & Automation Controls -->
+          <div class="settings-col">
+            <h4 style="color: #38bdf8; margin-bottom: 12px;">Personal Contact Information</h4>
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" id="setContactName" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Location *</label>
+              <input type="text" id="setContactLocation" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Mobile / Phone *</label>
+              <input type="text" id="setContactPhone" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Email Address *</label>
+              <input type="email" id="setContactEmail" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>LinkedIn Profile URL *</label>
+              <input type="url" id="setContactLinkedin" class="form-input">
+            </div>
+            <div class="form-group" id="setGithubGroup">
+              <label>GitHub Portfolio URL (Displayed only when configured)</label>
+              <input type="url" id="setContactGithub" class="form-input" placeholder="e.g. https://github.com/...">
+            </div>
+
+            <h4 style="color: #a855f7; margin-top: 24px; margin-bottom: 12px;">Automation Rules & Thresholds</h4>
+            <div style="background: hsla(222, 40%, 12%, 0.8); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <label style="font-weight: 700; color: #fff; margin: 0; cursor: pointer;" for="setAutoApplyEnabled">
+                  Enable Automatic Applications
+                </label>
+                <input type="checkbox" id="setAutoApplyEnabled" style="width: 20px; height: 20px; cursor: pointer;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Skill Matching Threshold (%)</label>
+                <input type="number" id="setMatchThreshold" class="form-input" min="50" max="95" value="70">
+                <small style="color: var(--text-dim); display: block; margin-top: 4px;">Rule: Submit automatically IF match_score &gt; 70% and eligibility passes. If &lt;= 70%, places in manual review queue.</small>
+              </div>
+            </div>
+
+            <div style="margin-top: 24px; display: flex; gap: 12px;">
+              <button class="btn btn-primary" onclick="saveActiveProfileSettings()">
+                💾 Save Profile Settings
+              </button>
+              <button class="btn btn-secondary" onclick="resetActiveProfileDefaults()">
+                ↺ Reset to Defaults
+              </button>
+            </div>
+          </div>
+
+          <!-- Column 2: Titles, Skills & Excluded Keywords -->
+          <div class="settings-col">
+            <!-- Job Titles Section -->
+            <div style="margin-bottom: 24px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h4 style="color: #34d399; margin: 0;">Target Job Titles</h4>
+                <button class="btn btn-xs btn-primary" onclick="addJobTitlePrompt()">+ Add Title</button>
+              </div>
+              <div id="settingsTitlesList" class="settings-chip-container" style="max-height: 180px; overflow-y: auto; background: hsla(222, 40%, 10%, 0.6); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); display: flex; flex-wrap: wrap; gap: 6px;"></div>
+            </div>
+
+            <!-- Technical Skills Section -->
+            <div style="margin-bottom: 24px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h4 style="color: #f472b6; margin: 0;">Technical Skills & Weights</h4>
+                <button class="btn btn-xs btn-primary" onclick="addSkillPrompt()">+ Add Skill</button>
+              </div>
+              <div id="settingsSkillsList" class="settings-chip-container" style="max-height: 240px; overflow-y: auto; background: hsla(222, 40%, 10%, 0.6); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); display: flex; flex-wrap: wrap; gap: 6px;"></div>
+            </div>
+
+            <!-- Excluded Keywords Section -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h4 style="color: #fb7185; margin: 0;">Excluded Keywords (Disqualifiers)</h4>
+                <button class="btn btn-xs btn-primary" onclick="addExcludePrompt()">+ Add Keyword</button>
+              </div>
+              <div id="settingsExcludeList" class="settings-chip-container" style="max-height: 140px; overflow-y: auto; background: hsla(222, 40%, 10%, 0.6); padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); display: flex; flex-wrap: wrap; gap: 6px;"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Job Inspection & Application Review Drawer / Modal -->

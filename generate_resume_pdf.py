@@ -200,11 +200,10 @@ TEST_RESUME_HTML = """<!DOCTYPE html>
   <h1>Kamalesan C</h1>
   <div class="tagline">Senior Automotive Test Engineer | HIL/SIL Testing, ECU Validation & Python Automation</div>
   <div class="contact-row">
-    <span>📍 Coimbatore, India (Open to Worldwide Relocation & Remote)</span>
-    <span>📞 +91 7305131264</span>
-    <span>✉️ <a href="mailto:kamaleshcai686@gmail.com">kamaleshcai686@gmail.com</a></span>
-    <span>🔗 <a href="https://www.linkedin.com/in/kamalesan-c-546646442">LinkedIn</a></span>
-    <span>💻 <a href="https://github.com/Kamalesh0206">GitHub</a></span>
+    <span>📍 Coimbatore, Tamil Nadu, India (Open to Relocation & Remote)</span>
+    <span>📞 +91 98436 19970</span>
+    <span>✉️ <a href="mailto:softkamalesh@gmail.com">softkamalesh@gmail.com</a></span>
+    <span>🔗 <a href="https://www.linkedin.com/in/kamalesh-chinnathambi-62b952299">LinkedIn</a></span>
   </div>
 </div>
 

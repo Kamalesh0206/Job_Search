@@ -95,9 +95,34 @@ def test_endpoints():
     server.AUTH_REQUIRED = False
     server.DASHBOARD_PASSWORD = ""
 
+    print("\n--- 9. Testing /api/profiles and /api/profiles/{id} ---")
+    r_profs = client.get('/api/profiles')
+    assert r_profs.status_code == 200
+    profs_data = r_profs.json()
+    assert "AI_ENGINEER" in profs_data
+    assert "TEST_ENGINEER" in profs_data
+    assert profs_data["AI_ENGINEER"]["phone"] == "+91 7305131264"
+    assert profs_data["TEST_ENGINEER"]["phone"] == "+91 98436 19970"
+    print("  [PASS] /api/profiles returned dual independent profiles")
+
+    # Update profile settings test
+    r_update = client.put('/api/profiles/AI_ENGINEER', json={
+        "match_threshold": 75,
+        "auto_apply_enabled": True
+    })
+    assert r_update.status_code == 200
+    assert r_update.json()["profile"]["match_threshold"] == 75
+
+    # Reset profile test
+    r_reset = client.post('/api/profiles/AI_ENGINEER/reset')
+    assert r_reset.status_code == 200
+    assert r_reset.json()["profile"]["match_threshold"] == 70
+    print("  [PASS] Profile update and reset endpoints succeeded")
+
     print("\n==========================================")
-    print("  ALL 8 API & SECURITY TESTS PASSED!     ")
+    print("  ALL 9 API & SECURITY TESTS PASSED!     ")
     print("==========================================")
 
 if __name__ == "__main__":
     test_endpoints()
+

@@ -192,6 +192,23 @@ def run_job_search(target_profile: Optional[str] = None) -> Dict[str, Any]:
             save_to_disk=True
         )
 
+        # Automatic Application Rule Evaluation
+        from apply_engine import evaluate_auto_apply_eligibility
+        prof_cfg = config.get("profiles", {}).get(profile_assigned, {})
+        auto_apply_allowed = prof_cfg.get("auto_apply_enabled", True)
+
+        eligibility = evaluate_auto_apply_eligibility(
+            match_score=scoring["score"],
+            mandatory_pass=scoring.get("mandatory_requirements_pass", True),
+            job_is_open=True,
+            not_already_applied=True,
+            application_data_is_valid=bool(resume_p and resume_p.exists() and job.url),
+            submission_method_is_authorized=auto_apply_allowed,
+            threshold=int(prof_cfg.get("match_threshold", 70))
+        )
+
+        assigned_status = eligibility["status"]
+
         # Prepare final row record
         row = {
             "profile_id": profile_assigned,
@@ -215,14 +232,14 @@ def run_job_search(target_profile: Optional[str] = None) -> Dict[str, Any]:
             "found_date": today,
             "last_seen_date": today,
             "relevance_score": scoring["score"],
-            "resume_used": resume_p.name,
+            "resume_used": resume_p.name if resume_p else "",
             "cover_letter_path": cover_res.get("file_path", ""),
-            "status": "READY_FOR_REVIEW" if scoring["score"] >= 65 else "DISCOVERED",
+            "status": assigned_status,
             "application_date": "",
             "recruiter_name": "",
             "recruiter_contact": "",
             "follow_up_date": "",
-            "notes": f"Score breakdown: {scoring['explanation']}",
+            "notes": f"Rule: {eligibility['reason']} | Breakdown: {scoring['explanation']}",
             "fingerprint": fp
         }
         new_relevant_rows.append(row)

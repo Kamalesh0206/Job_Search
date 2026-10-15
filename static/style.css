@@ -703,3 +703,149 @@ body {
 .toast { background: hsl(222, 40%, 14%); border: 1px solid var(--border-subtle); padding: 12px 18px; border-radius: var(--radius-md); color: #fff; font-size: 0.86rem; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); }
 .toast.success { border-color: var(--accent-emerald); }
 .toast.error { border-color: var(--accent-rose); }
+
+/* Dual-Profile Header Cards (Section 1 & 2) */
+.header-profile-container {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 320px;
+}
+
+.dual-profile-cards {
+  display: flex;
+  gap: 14px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.profile-summary-card {
+  background: hsla(222, 45%, 11%, 0.95);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  flex: 1;
+  min-width: 280px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.profile-summary-card:hover {
+  border-color: hsla(243, 75%, 59%, 0.5);
+  transform: translateY(-2px);
+}
+
+.profile-summary-card.ai-card {
+  border-left: 4px solid var(--primary);
+}
+
+.profile-summary-card.test-card {
+  border-left: 4px solid var(--accent-emerald);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.card-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.card-meta a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+}
+
+.card-meta a:hover {
+  text-decoration: underline;
+}
+
+/* Settings Chips & Controls (Section 3) */
+.settings-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: hsla(222, 35%, 16%, 0.95);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #f1f5f9;
+  margin: 3px;
+  transition: all 0.2s;
+}
+
+.settings-chip:hover {
+  border-color: #38bdf8;
+  background: hsla(222, 35%, 20%, 1);
+}
+
+.settings-chip .weight-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #a855f7;
+  background: hsla(270, 70%, 60%, 0.2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.settings-chip-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.settings-chip-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  opacity: 0.65;
+  color: #cbd5e1;
+  padding: 0 2px;
+}
+
+.settings-chip-btn:hover {
+  opacity: 1;
+  color: #fff;
+}
+
+.settings-chip-btn.delete-btn:hover {
+  color: #fb7185;
+}
+
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+  .header-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .dual-profile-cards {
+    flex-direction: column;
+  }
+  .candidate-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+

@@ -5,6 +5,16 @@
       "id": "AI_ENGINEER",
       "display_name": "AI Engineer",
       "enabled": true,
+      "auto_apply_enabled": true,
+      "match_threshold": 70,
+      "personal": {
+        "name": "Kamalesan C",
+        "location": "Coimbatore, India",
+        "phone": "+91 7305131264",
+        "email": "kamaleshcai686@gmail.com",
+        "linkedin": "https://www.linkedin.com/in/kamalesan-c-546646442",
+        "github": "https://github.com/Kamalesh0206"
+      },
       "target_titles": [
         "AI Engineer",
         "Generative AI Engineer",
@@ -37,24 +47,41 @@
         "Gemini API",
         "OpenAI API",
         "LLM applications",
-        "AI Agent Development",
-        "Prompt Engineering",
+        "AI agents",
+        "Prompt engineering",
         "FastAPI",
         "REST APIs",
+        "RAG",
+        "Vector databases",
         "PostgreSQL",
         "SQLAlchemy",
         "Redis",
         "Docker",
         "React",
         "n8n",
-        "MCP concepts",
-        "RAG and vector database concepts",
-        "Git and GitHub",
+        "MCP",
+        "Git",
+        "GitHub",
         "Cloud deployment"
       ],
+      "skill_weights": {
+        "Python": 1.0,
+        "Generative AI": 1.2,
+        "Gemini API": 1.0,
+        "OpenAI API": 1.0,
+        "LLM applications": 1.2,
+        "AI agents": 1.2,
+        "Prompt engineering": 1.0,
+        "FastAPI": 1.0,
+        "REST APIs": 0.9,
+        "RAG": 1.1,
+        "Vector databases": 1.0,
+        "PostgreSQL": 0.8,
+        "Docker": 0.9
+      },
       "projects": [
         "AI-powered SIL Test Automation Platform",
-        "EpiAgent PMO",
+        "EpiAgent PMO — AI Project Governance & Risk Management Platform",
         "AI Instagram Publisher Agent",
         "Automation Job Applying Agent",
         "HyGreen application"
@@ -76,13 +103,23 @@
       "id": "TEST_ENGINEER",
       "display_name": "Test Engineer",
       "enabled": true,
+      "auto_apply_enabled": true,
+      "match_threshold": 70,
+      "personal": {
+        "name": "Kamalesan C",
+        "location": "Coimbatore, Tamil Nadu, India",
+        "phone": "+91 98436 19970",
+        "email": "softkamalesh@gmail.com",
+        "linkedin": "https://www.linkedin.com/in/kamalesh-chinnathambi-62b952299",
+        "github": ""
+      },
       "target_titles": [
         "Test Engineer",
         "Senior Test Engineer",
-        "Automotive Test Engineer",
         "HIL Test Engineer",
         "SIL Test Engineer",
         "ECU Validation Engineer",
+        "Automotive Test Engineer",
         "Test Automation Engineer",
         "Python Test Automation Engineer",
         "Embedded Software Test Engineer",
@@ -103,19 +140,17 @@
         "Embedded Software Test Engineer"
       ],
       "technical_skills": [
-        "Automotive Embedded Systems",
-        "HIL and SIL Testing",
-        "ECU Validation",
-        "Python Test Automation",
-        "TraceTronic ECU-TEST",
+        "HIL testing",
+        "SIL testing",
+        "ECU validation",
+        "Python",
+        "ECU-TEST",
         "dSPACE SCALEXIO",
         "ETAS LABCAR",
         "CANoe",
         "CANalyzer",
         "INCA",
         "UDE",
-        "SystemDesk",
-        "ControlDesk",
         "CAN",
         "LIN",
         "FlexRay",
@@ -124,12 +159,25 @@
         "OBD-II",
         "OBDonUDS",
         "Embedded C",
-        "Requirements-Based Testing",
-        "Regression Testing",
-        "Diagnostic Testing",
-        "Test Result Analysis",
-        "Defect Analysis"
+        "Regression testing",
+        "Diagnostic testing",
+        "Requirements-based testing",
+        "Root cause analysis"
       ],
+      "skill_weights": {
+        "HIL testing": 1.2,
+        "SIL testing": 1.1,
+        "ECU validation": 1.2,
+        "Python": 1.0,
+        "ECU-TEST": 1.2,
+        "dSPACE SCALEXIO": 1.0,
+        "ETAS LABCAR": 1.0,
+        "CANoe": 1.1,
+        "CANalyzer": 1.0,
+        "INCA": 1.0,
+        "UDS": 1.1,
+        "Diagnostic testing": 1.0
+      },
       "projects": [
         "Mercedes-Benz Powertrain ECU Testing (Capgemini & Bosch)",
         "Automotive HIL/SIL Test Automation with ECU-TEST",
@@ -152,6 +200,32 @@
         "human resources",
         "marketing"
       ]
+    }
+  },
+  "automation_settings": {
+    "max_applications_per_day": 15,
+    "allowed_sources": [
+      "Remotive",
+      "Arbeitnow",
+      "EURemoteJobs",
+      "LinkedIn"
+    ],
+    "allowed_countries": [
+      "Germany",
+      "Netherlands",
+      "Ireland",
+      "Sweden",
+      "United Kingdom",
+      "United States",
+      "Canada",
+      "Australia",
+      "Singapore",
+      "United Arab Emirates",
+      "India"
+    ],
+    "minimum_eligibility_requirements": {
+      "min_experience_years": 5.0,
+      "require_sponsorship_or_remote": true
     }
   },
   "worldwide_locations": {

@@ -26,6 +26,8 @@ logs/
 
 # Backups & Temporary files
 *.backup.*
+*.bak.*
+*.bak
 * - Copy.*
 *.tmp
 

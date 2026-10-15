@@ -1,0 +1,35 @@
+Kamalesan C
+Coimbatore, Tamil Nadu, India
+Phone: +91 98436 19970
+Email: softkamalesh@gmail.com
+LinkedIn: https://www.linkedin.com/in/kamalesh-chinnathambi-62b952299
+
+Date: October 15, 2026
+
+Hiring Team
+BMW Group
+
+Subject: Application for HIL Test Engineer Position – BMW Group
+
+Dear Hiring Manager,
+
+I am writing to express my strong interest in the HIL Test Engineer position at BMW Group. With 7.4 years of specialized engineering experience in automotive ECU validation, Hardware-in-the-Loop (HIL) and Software-in-the-Loop (SIL) testing, and Python-based test automation frameworks, I bring extensive domain capability in verifying mission-critical automotive software systems.
+
+In my recent work at Capgemini Technology Services in strategic collaboration with Bosch Global Software Technologies, I have contributed extensively to Mercedes-Benz powertrain ECU validation programs. My core technical capabilities include:
+- Automated test case creation, execution, and defect triage utilizing TraceTronic ECU-TEST.
+- Test bench hardware integration and signal conditioning with dSPACE SCALEXIO and ETAS LABCAR.
+- Deep automotive network bus analysis across CAN, LIN, FlexRay, and Automotive Ethernet.
+- Comprehensive diagnostic protocol testing using UDS (ISO 14229) and OBD-II with Vector CANoe and ETAS INCA.
+- Developing customized Python automation utilities to parse diagnostic trouble codes (DTCs) and automate regression suites.
+
+I am enthusiastic about applying my validation rigor, automation architecture knowledge, and defect root-cause analysis depth to the engineering initiatives at BMW Group.
+
+I am based in India and actively open to international relocation with work visa sponsorship, as well as worldwide remote work opportunities.
+
+Thank you for your time and consideration. I welcome the opportunity to discuss how my automotive validation background aligns with your team's goals.
+
+Sincerely,
+
+Kamalesan C
+Test Engineer | HIL/SIL Testing, ECU Validation & Python Automation
+Email: softkamalesh@gmail.com | Phone: +91 98436 19970

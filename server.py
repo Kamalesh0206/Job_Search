@@ -428,25 +428,64 @@ def background_apply_worker(req: ApplyRequest):
         task_states["apply"]["results"].append(res)
 
         if req.job_id:
-            new_status = "APPLIED" if res.get("submitted") else "READY_FOR_REVIEW"
-            database.update_job_status_db(req.job_id, new_status, notes=res.get("notes", ""))
+            # Set status strictly: APPLIED only if submitted is True
+            if res.get("submitted"):
+                new_status = "APPLIED"
+            elif res.get("status") == "MANUAL_ACTION_REQUIRED":
+                new_status = "MANUAL_ACTION_REQUIRED"
+            elif res.get("status") == "SUBMISSION_FAILED":
+                new_status = "SUBMISSION_FAILED"
+            else:
+                new_status = "READY_TO_APPLY"
+
+            database.update_job_application_db(
+                job_id=req.job_id,
+                status=new_status,
+                resume_used=res.get("resume_used"),
+                cover_letter_path=res.get("cover_letter_path"),
+                notes=res.get("notes") or res.get("error_details", ""),
+                submission_timestamp=res.get("submission_timestamp"),
+                submission_response=res.get("submission_response"),
+                error_details=res.get("error_details")
+            )
     except Exception as e:
         task_states["apply"]["status"] = "error"
         task_states["apply"]["message"] = f"Apply engine failed: {e}"
+        if req.job_id:
+            database.update_job_application_db(
+                job_id=req.job_id,
+                status="SUBMISSION_FAILED",
+                error_details=str(e),
+                notes=f"Submission error: {e}"
+            )
 
 @app.post("/api/apply")
 def trigger_apply(req: ApplyRequest, background_tasks: BackgroundTasks, _: bool = Depends(verify_authentication)):
     if task_states["apply"]["status"] == "running":
         return {"status": "already_running", "message": "An application is currently running"}
 
-    # Human-in-the-loop safety verification
+    # Automatic application eligibility verification
+    from apply_engine import evaluate_auto_apply_eligibility
     if req.auto_submit and not req.explicit_approval:
         target = database.get_job_by_id(req.job_id)
-        if target and target.get("status") != "APPROVED":
-            raise HTTPException(
-                status_code=400,
-                detail="Safety Guard: Job must be explicitly marked as 'APPROVED' before automatic submission."
+        if target:
+            prof_id = target.get("profile_id", "AI_ENGINEER")
+            prof_cfg = load_config().get("profiles", {}).get(prof_id, {})
+            auto_allowed = prof_cfg.get("auto_apply_enabled", True)
+            elig = evaluate_auto_apply_eligibility(
+                match_score=int(target.get("relevance_score", 0)),
+                mandatory_pass=True,
+                job_is_open=True,
+                not_already_applied=target.get("application_status") != "APPLIED",
+                application_data_is_valid=True,
+                submission_method_is_authorized=auto_allowed,
+                threshold=int(prof_cfg.get("match_threshold", 70))
             )
+            if not elig["eligible"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Auto-Apply Guard: {elig['reason']}"
+                )
 
     background_tasks.add_task(background_apply_worker, req)
     return {"status": "started", "message": f"Application assistant started for {req.company_name}"}
@@ -470,6 +509,31 @@ def get_config(_: bool = Depends(verify_authentication)):
 def update_config_api(data: Dict[str, Any], _: bool = Depends(verify_authentication)):
     save_config(data)
     return {"success": True, "message": "Configuration updated"}
+
+@app.get("/api/profiles")
+def get_all_profiles_api(_: bool = Depends(verify_authentication)):
+    pm = ProfileManager()
+    return pm.get_all_profiles()
+
+@app.get("/api/profiles/{profile_id}")
+def get_single_profile_api(profile_id: str, _: bool = Depends(verify_authentication)):
+    pm = ProfileManager()
+    norm = pm.normalize_profile_id(profile_id)
+    return pm.get_profile(norm)
+
+@app.put("/api/profiles/{profile_id}")
+def update_single_profile_api(profile_id: str, updates: Dict[str, Any], _: bool = Depends(verify_authentication)):
+    pm = ProfileManager()
+    norm = pm.normalize_profile_id(profile_id)
+    updated = pm.update_profile(norm, updates)
+    return {"success": True, "profile_id": norm, "profile": updated}
+
+@app.post("/api/profiles/{profile_id}/reset")
+def reset_single_profile_api(profile_id: str, _: bool = Depends(verify_authentication)):
+    pm = ProfileManager()
+    norm = pm.normalize_profile_id(profile_id)
+    reset_profile = pm.reset_to_defaults(norm)
+    return {"success": True, "profile_id": norm, "profile": reset_profile}
 
 @app.get("/api/profile")
 def get_profile_api(_: bool = Depends(verify_authentication)):
