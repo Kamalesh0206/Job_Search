@@ -221,12 +221,50 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   backdrop-filter: blur(12px);
-  transition: transform 0.2s, border-color 0.2s;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease,
+              box-shadow 0.2s ease,
+              background-color 0.2s ease;
+  outline: none;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  border-color: hsla(243, 75%, 60%, 0.4);
+  transform: translateY(-3px);
+  border-color: var(--accent-cyan);
+  background: var(--bg-surface-hover);
+  box-shadow: 0 8px 24px hsla(222, 50%, 4%, 0.6), 0 0 12px hsla(189, 94%, 43%, 0.15);
+}
+
+.stat-card:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+.stat-card:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+.stat-card.active {
+  border-color: var(--accent-cyan);
+  background: hsla(189, 94%, 43%, 0.08);
+  box-shadow: 0 0 0 1px var(--accent-cyan), 0 8px 20px hsla(189, 94%, 43%, 0.2);
+}
+
+.stat-card.active::after {
+  content: "ACTIVE";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  background: var(--accent-cyan);
+  color: #041019;
 }
 
 .stat-label {
@@ -359,6 +397,50 @@ body {
   font-size: 0.84rem;
   outline: none;
   cursor: pointer;
+}
+
+/* Active Summary Card Filter Banner */
+.active-card-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: hsla(189, 94%, 43%, 0.08);
+  border: 1px solid hsla(189, 94%, 43%, 0.35);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  gap: 12px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.active-card-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.active-filter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  background: hsla(189, 94%, 43%, 0.2);
+  color: var(--accent-cyan);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.active-filter-text {
+  font-size: 0.88rem;
+  color: var(--text-main);
+}
+
+.active-filter-text strong {
+  color: #fff;
 }
 
 /* Jobs Table */

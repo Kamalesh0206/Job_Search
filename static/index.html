@@ -79,7 +79,7 @@
 
     <!-- Independent Profile Stats Grid (Section 10) -->
     <section class="stats-grid" id="statsGrid">
-      <div class="stat-card">
+      <div class="stat-card" id="card-total" role="button" tabindex="0" onclick="filterByCard('total')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByCard('total');}" title="Click to view all jobs for this profile">
         <div class="stat-info">
           <div class="stat-label">Total Jobs Found</div>
           <div id="stat-total" class="stat-value">--</div>
@@ -88,7 +88,7 @@
         <div class="stat-icon icon-cyan">📊</div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card" id="card-relevant" role="button" tabindex="0" onclick="filterByCard('relevant')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByCard('relevant');}" title="Click to filter relevant jobs (Score 60+)">
         <div class="stat-info">
           <div class="stat-label">Relevant Jobs (60+)</div>
           <div id="stat-relevant" class="stat-value">--</div>
@@ -97,7 +97,7 @@
         <div class="stat-icon icon-indigo">🎯</div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card" id="card-sponsorship" role="button" tabindex="0" onclick="filterByCard('sponsorship')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByCard('sponsorship');}" title="Click to filter confirmed sponsorship jobs">
         <div class="stat-info">
           <div class="stat-label">Confirmed Sponsorship</div>
           <div id="stat-sponsorship" class="stat-value">--</div>
@@ -106,7 +106,7 @@
         <div class="stat-icon icon-emerald">🛂</div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card" id="card-remote" role="button" tabindex="0" onclick="filterByCard('remote')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByCard('remote');}" title="Click to filter remote positions">
         <div class="stat-info">
           <div class="stat-label">Remote Positions</div>
           <div id="stat-remote" class="stat-value">--</div>
@@ -115,7 +115,7 @@
         <div class="stat-icon icon-purple">🌍</div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card" id="card-applied" role="button" tabindex="0" onclick="filterByCard('applied')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByCard('applied');}" title="Click to filter submitted applications">
         <div class="stat-info">
           <div class="stat-label">Applications Submitted</div>
           <div id="stat-applied" class="stat-value">--</div>
@@ -124,7 +124,7 @@
         <div class="stat-icon icon-emerald">✅</div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card" id="card-interviews" role="button" tabindex="0" onclick="filterByCard('interviews')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByCard('interviews');}" title="Click to filter active interview pipeline">
         <div class="stat-info">
           <div class="stat-label">Interviews / Pipeline</div>
           <div id="stat-interviews" class="stat-value">--</div>
@@ -133,7 +133,7 @@
         <div class="stat-icon icon-amber">💬</div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card" id="card-rejections" role="button" tabindex="0" onclick="filterByCard('rejections')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByCard('rejections');}" title="Click to filter rejected jobs">
         <div class="stat-info">
           <div class="stat-label">Rejections</div>
           <div id="stat-rejections" class="stat-value">--</div>
@@ -236,6 +236,17 @@
             <option value="30d">Past 30 Days</option>
           </select>
         </div>
+      </div>
+
+      <!-- Active Summary Card Filter Banner -->
+      <div id="activeCardBanner" class="active-card-banner" style="display: none;">
+        <div class="active-card-info">
+          <span class="active-filter-badge" id="activeFilterBadge">🎯 Filter Active</span>
+          <span class="active-filter-text">Showing: <strong id="activeCardLabel">Total Jobs</strong> (<span id="activeCardCount">0</span> jobs found)</span>
+        </div>
+        <button class="btn btn-secondary btn-xs" onclick="clearCardFilter()" title="Clear active summary card filter">
+          ✕ Clear Card Filter
+        </button>
       </div>
 
       <!-- Live Search Tracker Status Bar -->

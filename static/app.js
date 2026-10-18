@@ -76,6 +76,7 @@ const state = {
   stats: null,
   profiles: {},
   settingsProfile: 'AI_ENGINEER',
+  activeCardFilter: null,
   filters: {
     status: 'All',
     country: 'All',
@@ -233,7 +234,13 @@ function selectProfile(profileId) {
   // Update header immediately
   renderHeaderProfile();
   fetchStats();
-  fetchJobs();
+
+  // If a summary card filter is currently active, preserve and re-apply it under the new profile scope
+  if (state.activeCardFilter) {
+    filterByCard(state.activeCardFilter);
+  } else {
+    fetchJobs();
+  }
 }
 
 function initProfileSelector() {
@@ -320,6 +327,170 @@ function populateCountryFilter(countries) {
   });
 }
 
+function getProfileDisplayName(profileId) {
+  if (profileId === 'AI_ENGINEER') return 'AI Engineer';
+  if (profileId === 'TEST_ENGINEER') return 'Test Engineer';
+  return 'All Profiles';
+}
+
+function getCardConfig(cardType) {
+  switch (cardType) {
+    case 'total':
+      return {
+        id: 'total',
+        label: 'Total Jobs Found',
+        badge: '📊 All Jobs',
+        filters: { status: 'All', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 0, search: '' }
+      };
+    case 'relevant':
+      return {
+        id: 'relevant',
+        label: 'Relevant Jobs (60+)',
+        badge: '🎯 Score 60+',
+        filters: { status: 'All', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 60, search: '' }
+      };
+    case 'sponsorship':
+      return {
+        id: 'sponsorship',
+        label: 'Confirmed Sponsorship',
+        badge: '🛂 Confirmed Visa Only',
+        filters: { status: 'All', country: 'All', workArrangement: 'All', sponsorship: 'CONFIRMED', postingDate: 'All', minScore: 0, search: '' }
+      };
+    case 'remote':
+      return {
+        id: 'remote',
+        label: 'Remote Positions',
+        badge: '🌍 Remote Only',
+        filters: { status: 'All', country: 'All', workArrangement: 'Remote', sponsorship: 'All', postingDate: 'All', minScore: 0, search: '' }
+      };
+    case 'applied':
+      return {
+        id: 'applied',
+        label: 'Applications Submitted',
+        badge: '✅ Submitted Only',
+        filters: { status: 'APPLIED', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 0, search: '' }
+      };
+    case 'interviews':
+      return {
+        id: 'interviews',
+        label: 'Interviews / Pipeline',
+        badge: '💬 Active Stages',
+        filters: { status: 'INTERVIEW', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 0, search: '' }
+      };
+    case 'rejections':
+      return {
+        id: 'rejections',
+        label: 'Rejections',
+        badge: '🛑 Rejected Only',
+        filters: { status: 'REJECTED', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 0, search: '' }
+      };
+    default:
+      return null;
+  }
+}
+
+// Summary Card Click Filtering Handler
+function filterByCard(cardType) {
+  const config = getCardConfig(cardType);
+  if (!config) return;
+
+  state.activeCardFilter = cardType;
+
+  // Apply card filter defaults to state
+  Object.assign(state.filters, config.filters);
+
+  // Sync DOM form controls
+  const statusEl = document.getElementById('filterStatus');
+  if (statusEl) statusEl.value = state.filters.status;
+
+  const countryEl = document.getElementById('filterCountry');
+  if (countryEl) countryEl.value = state.filters.country;
+
+  const workEl = document.getElementById('filterWorkArrangement');
+  if (workEl) workEl.value = state.filters.workArrangement;
+
+  const sponEl = document.getElementById('filterSponsorship');
+  if (sponEl) sponEl.value = state.filters.sponsorship;
+
+  const minScoreEl = document.getElementById('filterMinScore');
+  if (minScoreEl) minScoreEl.value = String(state.filters.minScore);
+
+  const postingEl = document.getElementById('filterPostingDate');
+  if (postingEl) postingEl.value = state.filters.postingDate;
+
+  const searchEl = document.getElementById('searchInput');
+  if (searchEl) searchEl.value = state.filters.search;
+
+  // Highlight active card
+  document.querySelectorAll('#statsGrid .stat-card').forEach(c => c.classList.remove('active'));
+  const activeCardEl = document.getElementById(`card-${cardType}`);
+  if (activeCardEl) activeCardEl.classList.add('active');
+
+  // Update active card filter banner
+  const banner = document.getElementById('activeCardBanner');
+  const labelEl = document.getElementById('activeCardLabel');
+  const badgeEl = document.getElementById('activeFilterBadge');
+  if (banner && labelEl) {
+    labelEl.textContent = `${config.label} [${getProfileDisplayName(state.activeProfile)}]`;
+    if (badgeEl) badgeEl.textContent = config.badge;
+    banner.style.display = 'flex';
+  }
+
+  // Switch to Live Job Tracker tab
+  switchTab('jobs');
+
+  // Re-fetch jobs with card filter applied
+  fetchJobs().then(() => {
+    // Smoothly scroll to Live Job Tracker
+    const jobsPane = document.getElementById('tab-jobs');
+    if (jobsPane) {
+      jobsPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+}
+
+// Clear Summary Card Filter
+function clearCardFilter() {
+  state.activeCardFilter = null;
+  state.filters = {
+    status: 'All',
+    country: 'All',
+    workArrangement: 'All',
+    sponsorship: 'All',
+    postingDate: 'All',
+    minScore: 0,
+    search: ''
+  };
+
+  const statusEl = document.getElementById('filterStatus');
+  if (statusEl) statusEl.value = 'All';
+
+  const countryEl = document.getElementById('filterCountry');
+  if (countryEl) countryEl.value = 'All';
+
+  const workEl = document.getElementById('filterWorkArrangement');
+  if (workEl) workEl.value = 'All';
+
+  const sponEl = document.getElementById('filterSponsorship');
+  if (sponEl) sponEl.value = 'All';
+
+  const minScoreEl = document.getElementById('filterMinScore');
+  if (minScoreEl) minScoreEl.value = '0';
+
+  const postingEl = document.getElementById('filterPostingDate');
+  if (postingEl) postingEl.value = 'All';
+
+  const searchEl = document.getElementById('searchInput');
+  if (searchEl) searchEl.value = '';
+
+  document.querySelectorAll('#statsGrid .stat-card').forEach(c => c.classList.remove('active'));
+
+  const banner = document.getElementById('activeCardBanner');
+  if (banner) banner.style.display = 'none';
+
+  fetchJobs();
+}
+
 // Fetch Filtered Jobs
 async function fetchJobs() {
   const params = new URLSearchParams();
@@ -341,9 +512,27 @@ async function fetchJobs() {
     const tabCount = document.getElementById('tabCountJobs');
     if (tabCount) tabCount.textContent = data.count;
 
+    const activeCardCount = document.getElementById('activeCardCount');
+    if (activeCardCount) activeCardCount.textContent = data.count;
+
     renderJobsTable(state.jobs);
   } catch (err) {
     console.error('Error fetching jobs:', err);
+    const tbody = document.getElementById('jobsTableBody');
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="11" style="text-align: center; padding: 48px 20px; color: var(--accent-rose);">
+            <div style="max-width: 440px; margin: 0 auto; text-align: center;">
+              <div style="font-size: 2rem; margin-bottom: 8px;">⚠️</div>
+              <h4 style="color: var(--accent-rose); font-size: 1rem; margin-bottom: 6px; font-weight: 700;">Failed to Load Job Records</h4>
+              <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 16px;">${escapeHtml(err.message || 'An error occurred while connecting to the database.')}</p>
+              <button class="btn btn-secondary btn-sm" onclick="fetchJobs()">🔄 Retry</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
   }
 }
 
@@ -356,8 +545,17 @@ function renderJobsTable(jobs) {
   if (!jobs || jobs.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="11" style="text-align: center; padding: 48px; color: var(--text-dim);">
-          No job listings found matching your current filters.
+        <td colspan="11" style="text-align: center; padding: 56px 20px; color: var(--text-dim);">
+          <div style="max-width: 440px; margin: 0 auto; text-align: center;">
+            <div style="font-size: 2.2rem; margin-bottom: 12px; opacity: 0.85;">🔎</div>
+            <h4 style="color: var(--text-main); font-size: 1.1rem; margin-bottom: 8px; font-weight: 700;">No jobs match this filter.</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5;">
+              There are currently no job records matching the selected criteria under the <strong>${escapeHtml(getProfileDisplayName(state.activeProfile))}</strong> scope.
+            </p>
+            <button class="btn btn-secondary btn-sm" onclick="clearCardFilter()" style="display: inline-flex; align-items: center; gap: 6px;">
+              <span>✕</span> Clear Filter
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -454,6 +652,14 @@ function applyFilters() {
   if (postingDateEl) state.filters.postingDate = postingDateEl.value;
   state.filters.minScore = parseInt(document.getElementById('filterMinScore').value || '0');
   state.filters.search = document.getElementById('searchInput').value.trim();
+
+  // If user modifies dropdowns manually, clear summary card active badge
+  if (state.activeCardFilter) {
+    state.activeCardFilter = null;
+    document.querySelectorAll('#statsGrid .stat-card').forEach(c => c.classList.remove('active'));
+    const banner = document.getElementById('activeCardBanner');
+    if (banner) banner.style.display = 'none';
+  }
 
   fetchJobs();
 }

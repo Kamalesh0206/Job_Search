@@ -304,16 +304,24 @@ def get_all_jobs(
         params.append(p_up)
 
     if status and status != "All":
-        conditions.append(f"UPPER(application_status) = {param_marker}")
-        params.append(status.upper())
+        s_up = status.upper()
+        if s_up in ("INTERVIEW", "PIPELINE", "INTERVIEWS"):
+            conditions.append(f"(UPPER(application_status) = 'INTERVIEW' OR UPPER(application_status) IN ('ASSESSMENT', 'OFFER', 'PIPELINE'))")
+        else:
+            conditions.append(f"UPPER(application_status) = {param_marker}")
+            params.append(s_up)
 
     if country and country != "All":
         conditions.append(f"LOWER(country) LIKE {param_marker}")
         params.append(f"%{country.lower()}%")
 
     if work_arrangement and work_arrangement != "All":
-        conditions.append(f"LOWER(work_arrangement) LIKE {param_marker}")
-        params.append(f"%{work_arrangement.lower()}%")
+        if work_arrangement.lower() == "remote":
+            conditions.append(f"(LOWER(work_arrangement) = 'remote' OR (LOWER(work_arrangement) LIKE {param_marker} AND LOWER(work_arrangement) NOT LIKE '%hybrid%' AND LOWER(work_arrangement) NOT LIKE '%onsite%' AND LOWER(work_arrangement) NOT LIKE '%on-site%'))")
+            params.append("%remote%")
+        else:
+            conditions.append(f"LOWER(work_arrangement) LIKE {param_marker}")
+            params.append(f"%{work_arrangement.lower()}%")
 
     if sponsorship and sponsorship != "All":
         conditions.append(f"UPPER(visa_sponsorship_status) = {param_marker}")
@@ -585,13 +593,13 @@ def calculate_stats(all_jobs: List[Dict[str, Any]], profile_filter: Optional[str
     relevant = sum(1 for j in filtered if int(j.get("relevance_score", 0)) >= 60)
     high_match = sum(1 for j in filtered if int(j.get("relevance_score", 0)) > 70)
     confirmed_sponsorship = sum(1 for j in filtered if j.get("visa_sponsorship_status", "").upper() == "CONFIRMED")
-    remote_jobs = sum(1 for j in filtered if "remote" in j.get("work_arrangement", "").lower())
+    remote_jobs = sum(1 for j in filtered if "remote" in j.get("work_arrangement", "").lower() and "hybrid" not in j.get("work_arrangement", "").lower())
     applied = sum(1 for j in filtered if j.get("status", "").upper() == "APPLIED")
     ready_to_apply = sum(1 for j in filtered if j.get("status", "").upper() in ("READY_TO_APPLY", "READY_FOR_REVIEW", "APPROVED"))
     submission_failed = sum(1 for j in filtered if j.get("status", "").upper() == "SUBMISSION_FAILED")
     manual_action_required = sum(1 for j in filtered if j.get("status", "").upper() == "MANUAL_ACTION_REQUIRED")
     below_threshold = sum(1 for j in filtered if j.get("status", "").upper() == "BELOW_THRESHOLD")
-    interviews = sum(1 for j in filtered if j.get("status", "").upper() == "INTERVIEW")
+    interviews = sum(1 for j in filtered if j.get("status", "").upper() in ("INTERVIEW", "ASSESSMENT", "OFFER", "PIPELINE"))
     rejections = sum(1 for j in filtered if j.get("status", "").upper() == "REJECTED")
 
     return {
