@@ -659,6 +659,18 @@ def get_search_logs(limit: int = 50) -> List[Dict[str, Any]]:
     conn.close()
     return [dict(r) for r in rows]
 
+def get_daily_applied_count(profile_id: Optional[str] = None) -> int:
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    all_jobs = get_all_jobs()
+    count = 0
+    for j in all_jobs:
+        if str(j.get("status") or j.get("application_status", "")).upper() == "APPLIED":
+            app_date = str(j.get("application_date", "") or j.get("submission_timestamp", ""))
+            if today_str in app_date:
+                if not profile_id or profile_id == "ALL" or str(j.get("profile_id", "")).upper() == profile_id.upper():
+                    count += 1
+    return count
+
 def export_to_excel_file(output_path: Path):
     from openpyxl import Workbook
     conn, engine = get_connection()

@@ -849,3 +849,256 @@ body {
   }
 }
 
+/* ==========================================================================
+   Automatic Application Policy Panel & Modal (Section 1 & 5)
+   ========================================================================== */
+
+.policy-panel {
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 14px 0 20px 0;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.policy-panel.panel-disabled {
+  background: hsla(215, 30%, 14%, 0.7);
+  border: 1px solid hsla(215, 30%, 30%, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.policy-panel.panel-active {
+  background: hsla(38, 92%, 50%, 0.1);
+  border: 1px solid hsla(38, 92%, 50%, 0.45);
+  box-shadow: 0 4px 16px hsla(38, 92%, 50%, 0.12);
+}
+
+.policy-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.policy-title-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.policy-icon-badge {
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 8px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.policy-icon-badge.icon-info {
+  background: hsla(199, 89%, 48%, 0.15);
+  border: 1px solid hsla(199, 89%, 48%, 0.35);
+  color: #38bdf8;
+}
+
+.policy-icon-badge.icon-warning {
+  background: hsla(38, 92%, 50%, 0.2);
+  border: 1px solid hsla(38, 92%, 50%, 0.5);
+  color: #fbbf24;
+}
+
+.policy-heading-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.policy-heading {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.policy-status-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.policy-status-pill.pill-off {
+  background: hsla(215, 25%, 25%, 0.8);
+  color: #94a3b8;
+  border: 1px solid hsla(215, 25%, 35%, 0.6);
+}
+
+.policy-status-pill.pill-warning {
+  background: hsla(38, 92%, 50%, 0.22);
+  color: #fcd34d;
+  border: 1px solid hsla(38, 92%, 50%, 0.5);
+}
+
+.policy-description {
+  color: #cbd5e1;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.policy-controls-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid hsla(222, 25%, 25%, 0.5);
+  flex-wrap: wrap;
+}
+
+.profile-toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: hsla(222, 40%, 10%, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 14px;
+  min-width: 250px;
+}
+
+.toggle-meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.toggle-role-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.toggle-state-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.toggle-state-label.label-on {
+  color: #34d399;
+}
+
+.toggle-state-label.label-off {
+  color: #94a3b8;
+}
+
+/* Switch Toggle Component */
+.switch-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+.switch-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider-round {
+  position: absolute;
+  inset: 0;
+  background-color: #334155;
+  transition: .25s ease;
+  border-radius: 24px;
+  border: 1px solid #475569;
+}
+
+.slider-round:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #cbd5e1;
+  transition: .25s ease;
+  border-radius: 50%;
+}
+
+.switch-toggle input:checked + .slider-round {
+  background-color: #059669;
+  border-color: #10b981;
+}
+
+.switch-toggle input:checked + .slider-round:before {
+  transform: translateX(20px);
+  background-color: #ffffff;
+}
+
+/* Policy Modal Styles */
+.policy-modal-dialog {
+  max-width: 650px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.policy-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: 55vh;
+  padding: 16px 20px;
+}
+
+.rule-card {
+  display: flex;
+  gap: 12px;
+  background: hsla(222, 35%, 15%, 0.4);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.rule-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.rule-content h5 {
+  margin: 0 0 4px 0;
+  font-size: 0.88rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+.rule-content p {
+  margin: 0;
+  font-size: 0.81rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.rule-content code {
+  background: hsla(222, 40%, 10%, 0.8);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: #38bdf8;
+  font-size: 0.78rem;
+}
+

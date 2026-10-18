@@ -5,7 +5,7 @@
       "id": "AI_ENGINEER",
       "display_name": "AI Engineer",
       "enabled": true,
-      "auto_apply_enabled": true,
+      "auto_apply_enabled": false,
       "match_threshold": 70,
       "personal": {
         "name": "Kamalesan C",
@@ -103,7 +103,7 @@
       "id": "TEST_ENGINEER",
       "display_name": "Test Engineer",
       "enabled": true,
-      "auto_apply_enabled": true,
+      "auto_apply_enabled": false,
       "match_threshold": 70,
       "personal": {
         "name": "Kamalesan C",

@@ -119,8 +119,18 @@ def test_endpoints():
     assert r_reset.json()["profile"]["match_threshold"] == 70
     print("  [PASS] Profile update and reset endpoints succeeded")
 
+    print("\n--- 10. Testing /api/profiles/{id}/auto-apply endpoint ---")
+    r_toggle_on = client.post('/api/profiles/AI_ENGINEER/auto-apply', json={"enabled": True})
+    assert r_toggle_on.status_code == 200
+    assert r_toggle_on.json()["auto_apply_enabled"] is True
+
+    r_toggle_off = client.post('/api/profiles/AI_ENGINEER/auto-apply', json={"enabled": False})
+    assert r_toggle_off.status_code == 200
+    assert r_toggle_off.json()["auto_apply_enabled"] is False
+    print("  [PASS] Auto-apply toggle endpoint succeeded (ON and OFF)")
+
     print("\n==========================================")
-    print("  ALL 9 API & SECURITY TESTS PASSED!     ")
+    print("  ALL 10 API & SECURITY TESTS PASSED!    ")
     print("==========================================")
 
 if __name__ == "__main__":

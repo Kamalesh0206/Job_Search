@@ -1,0 +1,36 @@
+Kamalesan C
+Coimbatore, India
+Phone: +91 7305131264
+Email: kamaleshcai686@gmail.com
+LinkedIn: https://www.linkedin.com/in/kamalesan-c-546646442
+GitHub: https://github.com/Kamalesh0206
+
+Date: October 18, 2026
+
+Hiring Team
+Siemens Healthineers
+
+Subject: Application for Senior AI Validation Engineer Position – Siemens Healthineers
+
+Dear Hiring Manager,
+
+I am writing to submit my application for the Senior AI Validation Engineer position at Siemens Healthineers. With 7.4 years of engineering experience spanning production Generative AI applications, autonomous AI agent development, and scalable Python backend architectures, I am excited about the opportunity to build high-impact intelligent software for Siemens Healthineers.
+
+My technical expertise centers on state-of-the-art Generative AI systems and multi-agent workflows, including:
+- Production LLM applications utilizing OpenAI API and Google Gemini API with advanced prompt engineering.
+- Retrieval-Augmented Generation (RAG) architectures with vector databases and semantic search.
+- Engineering end-to-end platforms including EpiAgent PMO (multi-agent project governance and automated risk triage) and AI-powered synthetic test automation platforms.
+- High-performance asynchronous microservices with FastAPI, REST APIs, PostgreSQL, Redis, and Docker.
+- Designing human-in-the-loop interfaces and enterprise AI workflows that guarantee safety and measurable business value.
+
+I am eager to apply my practical experience in building reliable, autonomous AI agents to solve demanding technical problems and drive product innovation at Siemens Healthineers.
+
+I am open to worldwide remote opportunities as well as international relocation with work visa sponsorship.
+
+Thank you for your consideration. I look forward to speaking with your team about how my skills align with your engineering objectives.
+
+Sincerely,
+
+Kamalesan C
+AI Engineer | Generative AI, AI Agents & Python Microservices
+Email: kamaleshcai686@gmail.com | Phone: +91 7305131264

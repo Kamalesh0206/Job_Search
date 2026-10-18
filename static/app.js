@@ -103,6 +103,7 @@ async function fetchProfiles() {
     if (!res.ok) throw new Error('Failed to load profiles');
     state.profiles = await res.json();
     renderHeaderProfile();
+    updatePolicyPanel();
     if (state.currentTab === 'skills-roles') {
       renderSettingsForm();
     }
@@ -832,6 +833,130 @@ function escapeHtml(str) {
 }
 
 // ==========================================================================
+// Automatic Application Policy & Safety Controls (Section 1, 2, 4, 5, 7)
+// ==========================================================================
+
+function updatePolicyPanel() {
+  const aiProf = state.profiles['AI_ENGINEER'] || {};
+  const testProf = state.profiles['TEST_ENGINEER'] || {};
+  const aiEnabled = Boolean(aiProf.auto_apply_enabled);
+  const testEnabled = Boolean(testProf.auto_apply_enabled);
+
+  const panel = document.getElementById('policyInfoPanel');
+  const iconBadge = document.getElementById('policyIconBadge');
+  const statusBadge = document.getElementById('policyStatusBadge');
+  const msgText = document.getElementById('policyMessageText');
+  const toggleAI = document.getElementById('toggleAutoApplyAI');
+  const labelAI = document.getElementById('labelAutoApplyAI');
+  const toggleTest = document.getElementById('toggleAutoApplyTest');
+  const labelTest = document.getElementById('labelAutoApplyTest');
+  const formCheckbox = document.getElementById('setAutoApplyEnabled');
+
+  // Update profile switch inputs
+  if (toggleAI) toggleAI.checked = aiEnabled;
+  if (labelAI) {
+    labelAI.textContent = aiEnabled ? 'ON' : 'OFF';
+    labelAI.className = 'toggle-state-label ' + (aiEnabled ? 'label-on' : 'label-off');
+  }
+
+  if (toggleTest) toggleTest.checked = testEnabled;
+  if (labelTest) {
+    labelTest.textContent = testEnabled ? 'ON' : 'OFF';
+    labelTest.className = 'toggle-state-label ' + (testEnabled ? 'label-on' : 'label-off');
+  }
+
+  if (formCheckbox) {
+    const currSetting = state.settingsProfile === 'AI_ENGINEER' ? aiEnabled : testEnabled;
+    formCheckbox.checked = currSetting;
+  }
+
+  // Determine dynamic policy state
+  const anyEnabled = aiEnabled || testEnabled;
+  const bothEnabled = aiEnabled && testEnabled;
+
+  if (panel) {
+    panel.classList.toggle('panel-active', anyEnabled);
+    panel.classList.toggle('panel-disabled', !anyEnabled);
+  }
+
+  if (iconBadge) {
+    iconBadge.textContent = anyEnabled ? '⚠️' : 'ℹ️';
+    iconBadge.className = 'policy-icon-badge ' + (anyEnabled ? 'icon-warning' : 'icon-info');
+  }
+
+  if (statusBadge && msgText) {
+    if (!anyEnabled) {
+      statusBadge.textContent = 'Disabled for both profiles';
+      statusBadge.className = 'policy-status-pill pill-off';
+      msgText.textContent = 'Automatic submission is disabled for both profiles. Applications require manual review. When enabled, eligible vacancies with a skill-match score strictly above 70% may be submitted automatically after all required eligibility checks pass.';
+    } else if (bothEnabled) {
+      statusBadge.textContent = 'Enabled for both profiles';
+      statusBadge.className = 'policy-status-pill pill-warning';
+      msgText.textContent = 'Automatic submission is enabled for both profiles. Eligible vacancies with a skill-match score strictly above 70% may be submitted automatically after all required eligibility checks pass. Your resume and contact details will be shared with the employer.';
+    } else if (aiEnabled) {
+      statusBadge.textContent = 'Enabled for AI Engineer';
+      statusBadge.className = 'policy-status-pill pill-warning';
+      msgText.textContent = 'Automatic submission is enabled for AI Engineer (disabled for Test Engineer). Eligible vacancies with a skill-match score strictly above 70% may be submitted automatically after all required eligibility checks pass. Your resume and contact details will be shared with the employer.';
+    } else {
+      statusBadge.textContent = 'Enabled for Test Engineer';
+      statusBadge.className = 'policy-status-pill pill-warning';
+      msgText.textContent = 'Automatic submission is enabled for Test Engineer (disabled for AI Engineer). Eligible vacancies with a skill-match score strictly above 70% may be submitted automatically after all required eligibility checks pass. Your resume and contact details will be shared with the employer.';
+    }
+  }
+}
+
+async function handleAutoApplyToggle(profileId, newChecked) {
+  const normId = profileId.toUpperCase().includes('TEST') ? 'TEST_ENGINEER' : 'AI_ENGINEER';
+  const roleName = normId === 'AI_ENGINEER' ? 'AI Engineer' : 'Test Engineer';
+
+  if (newChecked) {
+    const userConfirmed = confirm(
+      `⚠️ Enable Automatic Application Submission for ${roleName}?\n\n` +
+      `Important Notice:\n` +
+      `When enabled, the system will automatically transmit your personal contact details, tailored resume, and cover letter directly to employers without individual confirmation whenever a vacancy achieves a skill-match score strictly above 70% and passes all eligibility checks.\n\n` +
+      `Do you confirm and wish to enable automatic submission?`
+    );
+
+    if (!userConfirmed) {
+      // Revert frontend UI back to saved state without saving
+      updatePolicyPanel();
+      return;
+    }
+  }
+
+  try {
+    showToast(`Updating automatic submission for ${roleName}...`, 'info');
+    const res = await apiFetch(`/api/profiles/${normId}/auto-apply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: Boolean(newChecked) })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to update setting');
+
+    if (!state.profiles[normId]) state.profiles[normId] = {};
+    state.profiles[normId].auto_apply_enabled = Boolean(newChecked);
+
+    showToast(`Automatic submission for ${roleName} is now ${newChecked ? 'ENABLED (ON)' : 'DISABLED (OFF)'}`, newChecked ? 'warning' : 'success');
+    updatePolicyPanel();
+  } catch (err) {
+    showToast(err.message, 'error');
+    updatePolicyPanel();
+  }
+}
+
+function openPolicyModal() {
+  const modal = document.getElementById('policyModalOverlay');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closePolicyModal() {
+  const modal = document.getElementById('policyModalOverlay');
+  if (modal) modal.style.display = 'none';
+}
+
+// ==========================================================================
 // Independent Skills & Roles Settings Management (Section 3 & 7)
 // ==========================================================================
 
@@ -848,6 +973,7 @@ function selectSettingsProfile(profileId) {
 
 function renderSettingsForm() {
   const p = state.profiles[state.settingsProfile] || {};
+  updatePolicyPanel();
   
   const nameInput = document.getElementById('setContactName');
   const locInput = document.getElementById('setContactLocation');
@@ -1146,6 +1272,7 @@ async function saveActiveProfileSettings() {
     showToast(`Profile settings for ${pid === 'AI_ENGINEER' ? 'AI Engineer' : 'Test Engineer'} saved successfully!`, 'success');
     renderHeaderProfile();
     renderSettingsForm();
+    updatePolicyPanel();
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -1167,6 +1294,7 @@ async function resetActiveProfileDefaults() {
     showToast(`Profile ${pid} reset to default configuration!`, 'success');
     renderHeaderProfile();
     renderSettingsForm();
+    updatePolicyPanel();
   } catch (err) {
     showToast(err.message, 'error');
   }

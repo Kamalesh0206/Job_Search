@@ -21,7 +21,7 @@ CANONICAL_DEFAULTS = {
         "email": "kamaleshcai686@gmail.com",
         "linkedin": "https://www.linkedin.com/in/kamalesan-c-546646442",
         "github": "https://github.com/Kamalesh0206",
-        "auto_apply_enabled": True,
+        "auto_apply_enabled": False,
         "match_threshold": 70,
         "target_roles": [
             "AI Engineer",
@@ -108,7 +108,7 @@ CANONICAL_DEFAULTS = {
         "email": "softkamalesh@gmail.com",
         "linkedin": "https://www.linkedin.com/in/kamalesh-chinnathambi-62b952299",
         "github": "",
-        "auto_apply_enabled": True,
+        "auto_apply_enabled": False,
         "match_threshold": 70,
         "target_roles": [
             "Test Engineer",

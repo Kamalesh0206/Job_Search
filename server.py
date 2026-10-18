@@ -157,6 +157,9 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
+class AutoApplyToggleRequest(BaseModel):
+    enabled: bool
+
 # ----------------- Helper Functions -----------------
 def load_config() -> Dict[str, Any]:
     if not CONFIG_PATH.exists():
@@ -191,7 +194,7 @@ def health_check():
         "active_profiles": ["AI_ENGINEER", "TEST_ENGINEER"],
         "auth_required": AUTH_REQUIRED,
         "environment": os.environ.get("ENVIRONMENT", "production" if os.environ.get("PORT") else "development"),
-        "version": "2.3.0"
+        "version": "2.4.0"
     }
 
 @app.get("/api/auth/status")
@@ -468,20 +471,47 @@ def trigger_apply(req: ApplyRequest, background_tasks: BackgroundTasks, _: bool 
 
     # Automatic application eligibility verification
     from apply_engine import evaluate_auto_apply_eligibility
+    from profile_manager import ProfileManager
+
+    pm = ProfileManager()
+    target = database.get_job_by_id(req.job_id) if req.job_id else None
+    prof_id = req.profile_id or (target.get("profile_id") if target else "AI_ENGINEER")
+    prof_id = pm.normalize_profile_id(prof_id)
+    prof_cfg = pm.get_profile(prof_id)
+    backend_auto_enabled = bool(prof_cfg.get("auto_apply_enabled", False))
+
     if req.auto_submit and not req.explicit_approval:
-        target = database.get_job_by_id(req.job_id)
+        # Backend validation check 1: Profile-level auto_apply_enabled
+        if not backend_auto_enabled:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Auto-Apply Guard: Automatic submission is disabled for {prof_id} in backend configuration."
+            )
+
+        # Backend validation check 2: Daily application limit
+        daily_count = database.get_daily_applied_count(prof_id)
+        max_daily = int(prof_cfg.get("max_applications_per_day", 10))
+        if daily_count >= max_daily:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Auto-Apply Guard: Daily application limit ({max_daily}) reached for {prof_id} ({daily_count} submitted today)."
+            )
+
+        # Backend validation check 3: Vacancy scoring and qualification checks
         if target:
-            prof_id = target.get("profile_id", "AI_ENGINEER")
-            prof_cfg = load_config().get("profiles", {}).get(prof_id, {})
-            auto_allowed = prof_cfg.get("auto_apply_enabled", True)
+            match_score = int(target.get("relevance_score", 0))
+            threshold = int(prof_cfg.get("match_threshold", 70))
+            has_mandatory_gap = bool(target.get("missing_skills") and "mandatory" in str(target.get("notes", "")).lower())
+
             elig = evaluate_auto_apply_eligibility(
-                match_score=int(target.get("relevance_score", 0)),
-                mandatory_pass=True,
+                match_score=match_score,
+                mandatory_pass=not has_mandatory_gap,
                 job_is_open=True,
                 not_already_applied=target.get("application_status") != "APPLIED",
                 application_data_is_valid=True,
-                submission_method_is_authorized=auto_allowed,
-                threshold=int(prof_cfg.get("match_threshold", 70))
+                submission_method_is_authorized=backend_auto_enabled,
+                threshold=threshold,
+                daily_limit_reached=(daily_count >= max_daily)
             )
             if not elig["eligible"]:
                 raise HTTPException(
@@ -529,6 +559,18 @@ def update_single_profile_api(profile_id: str, updates: Dict[str, Any], _: bool 
     norm = pm.normalize_profile_id(profile_id)
     updated = pm.update_profile(norm, updates)
     return {"success": True, "profile_id": norm, "profile": updated}
+
+@app.post("/api/profiles/{profile_id}/auto-apply")
+def toggle_profile_auto_apply(profile_id: str, req: AutoApplyToggleRequest, _: bool = Depends(verify_authentication)):
+    pm = ProfileManager()
+    norm = pm.normalize_profile_id(profile_id)
+    updated = pm.update_profile(norm, {"auto_apply_enabled": req.enabled})
+    return {
+        "success": True,
+        "profile_id": norm,
+        "auto_apply_enabled": updated.get("auto_apply_enabled", False),
+        "message": f"Automatic application for {norm} set to {'ON' if req.enabled else 'OFF'}"
+    }
 
 @app.post("/api/profiles/{profile_id}/reset")
 def reset_single_profile_api(profile_id: str, _: bool = Depends(verify_authentication)):

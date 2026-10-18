@@ -181,7 +181,8 @@ def evaluate_auto_apply_eligibility(
     not_already_applied: bool = True,
     application_data_is_valid: bool = True,
     submission_method_is_authorized: bool = True,
-    threshold: int = 70
+    threshold: int = 70,
+    daily_limit_reached: bool = False
 ) -> Dict[str, Any]:
     """
     Enforces the automatic application business rule:
@@ -191,6 +192,7 @@ def evaluate_auto_apply_eligibility(
     AND not_already_applied
     AND application_data_is_valid
     AND submission_method_is_authorized
+    AND not daily_limit_reached
     THEN submit_application
 
     If score == 70: do not auto-submit -> manual review (READY_TO_APPLY)
@@ -238,6 +240,13 @@ def evaluate_auto_apply_eligibility(
             "eligible": False,
             "status": "READY_TO_APPLY",
             "reason": "Profile automatic submission is disabled by user settings; placed in manual review queue"
+        }
+
+    if daily_limit_reached:
+        return {
+            "eligible": False,
+            "status": "READY_TO_APPLY",
+            "reason": "Daily application limit reached for profile; placed in manual review queue"
         }
 
     return {

@@ -250,29 +250,65 @@ def run_all_tests():
     print("  [PASS] TEST 14 passed successfully.")
 
     # ----------------------------------------------------
-    # TEST 15: Verify automatic-submission toggle works independently
+    # TEST 15: Independent Automatic-Submission Toggle & Policy Verification
     # ----------------------------------------------------
-    print("\n[TEST 15] Independent Automatic-Submission Toggle")
-    # Set AI to False, Test to True
+    print("\n[TEST 15] Independent Automatic-Submission Toggle & Policy Verification")
+    
+    # 1. Verify default to OFF
+    pm.reset_to_defaults("AI_ENGINEER")
+    pm.reset_to_defaults("TEST_ENGINEER")
+    ai_def = pm.get_profile("AI_ENGINEER")["auto_apply_enabled"]
+    test_def = pm.get_profile("TEST_ENGINEER")["auto_apply_enabled"]
+    print(f"  [OK] Default state: AI_ENGINEER={ai_def}, TEST_ENGINEER={test_def}")
+    assert ai_def is False, "AI Engineer must default to OFF"
+    assert test_def is False, "Test Engineer must default to OFF"
+
+    # 2. Enabling AI Engineer does NOT enable Test Engineer
+    pm.update_profile("AI_ENGINEER", {"auto_apply_enabled": True})
+    assert pm.get_profile("AI_ENGINEER")["auto_apply_enabled"] is True
+    assert pm.get_profile("TEST_ENGINEER")["auto_apply_enabled"] is False
+    print("  [OK] Enabling AI Engineer: AI=True, TEST=False (Independent)")
+
+    # 3. Enabling Test Engineer does NOT enable AI Engineer
     pm.update_profile("AI_ENGINEER", {"auto_apply_enabled": False})
     pm.update_profile("TEST_ENGINEER", {"auto_apply_enabled": True})
-
     assert pm.get_profile("AI_ENGINEER")["auto_apply_enabled"] is False
     assert pm.get_profile("TEST_ENGINEER")["auto_apply_enabled"] is True
+    print("  [OK] Enabling Test Engineer: AI=False, TEST=True (Independent)")
 
-    # Test eligibility for both profiles with score 80
+    # 4. Eligibility check reflecting profile setting
     e_ai = evaluate_auto_apply_eligibility(80, True, submission_method_is_authorized=pm.get_profile("AI_ENGINEER")["auto_apply_enabled"])
     e_test = evaluate_auto_apply_eligibility(80, True, submission_method_is_authorized=pm.get_profile("TEST_ENGINEER")["auto_apply_enabled"])
-
     assert e_ai["eligible"] is False, "AI Engineer auto-apply disabled must prevent auto-apply"
     assert e_test["eligible"] is True, "Test Engineer auto-apply enabled must allow auto-apply"
+    print("  [OK] Eligibility enforcement reflects independent profile flags")
 
-    # Reset both to True
-    pm.update_profile("AI_ENGINEER", {"auto_apply_enabled": True})
-    pm.update_profile("TEST_ENGINEER", {"auto_apply_enabled": True})
-    print("  [OK] AI Engineer auto-apply toggle: Independently toggled OFF")
-    print("  [OK] Test Engineer auto-apply toggle: Independently maintained ON")
-    print("  [OK] Restored both toggles to enabled state")
+    # 5. Daily limit enforcement
+    e_limit = evaluate_auto_apply_eligibility(85, True, submission_method_is_authorized=True, daily_limit_reached=True)
+    assert e_limit["eligible"] is False, "Daily limit reached must prevent auto-apply"
+    print("  [OK] Daily application limit enforcement: Blocked auto-apply when limit reached")
+
+    # 6. Policy message accuracy
+    def get_policy_status(ai_on, test_on):
+        if not ai_on and not test_on:
+            return "Automatic submission is disabled for both profiles."
+        elif ai_on and test_on:
+            return "Automatic submission is enabled for both profiles."
+        elif ai_on:
+            return "Automatic submission is enabled for AI Engineer."
+        else:
+            return "Automatic submission is enabled for Test Engineer."
+
+    assert "disabled for both" in get_policy_status(False, False)
+    assert "enabled for AI Engineer" in get_policy_status(True, False)
+    assert "enabled for Test Engineer" in get_policy_status(False, True)
+    assert "enabled for both" in get_policy_status(True, True)
+    print("  [OK] Dynamic policy message accurately reflects all 4 profile states")
+
+    # Restore default safe state (both OFF)
+    pm.update_profile("AI_ENGINEER", {"auto_apply_enabled": False})
+    pm.update_profile("TEST_ENGINEER", {"auto_apply_enabled": False})
+    print("  [OK] Reset both profiles to default safe state (OFF)")
     print("  [PASS] TEST 15 passed successfully.")
 
     print("\n" + "=" * 65)

@@ -9,7 +9,7 @@
     "email": "kamaleshcai686@gmail.com",
     "linkedin": "https://www.linkedin.com/in/kamalesan-c-546646442",
     "github": "https://github.com/Kamalesh0206",
-    "auto_apply_enabled": true,
+    "auto_apply_enabled": false,
     "match_threshold": 70,
     "target_roles": [
       "AI Engineer",
@@ -96,7 +96,7 @@
     "email": "softkamalesh@gmail.com",
     "linkedin": "https://www.linkedin.com/in/kamalesh-chinnathambi-62b952299",
     "github": "",
-    "auto_apply_enabled": true,
+    "auto_apply_enabled": false,
     "match_threshold": 70,
     "target_roles": [
       "Test Engineer",
