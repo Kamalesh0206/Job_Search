@@ -345,14 +345,19 @@ def get_job_cover_letter(job_id: str, _: bool = Depends(verify_authentication)):
     return res
 
 @app.get("/api/resume/{profile_id}")
-def download_role_resume(profile_id: str, _: bool = Depends(verify_authentication)):
+def download_role_resume(
+    profile_id: str,
+    download: bool = Query(False, description="Set true to force browser download as attachment"),
+    _: bool = Depends(verify_authentication)
+):
     resume_path = get_resume_path_for_profile(profile_id)
     if not resume_path.exists():
         raise HTTPException(status_code=404, detail=f"Resume not found for profile {profile_id}")
     return FileResponse(
         path=str(resume_path),
         filename=resume_path.name,
-        media_type="application/pdf"
+        media_type="application/pdf",
+        content_disposition_type="attachment" if download else "inline"
     )
 
 @app.post("/api/cover-letter")

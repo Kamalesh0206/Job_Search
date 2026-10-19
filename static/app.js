@@ -279,6 +279,13 @@ function switchTab(tabId) {
 
   if (tabId === 'skills-roles') {
     renderSettingsForm();
+  } else if (tabId === 'resumes') {
+    // Lazy-load PDF previews only when user actively navigates to resumes tab
+    document.querySelectorAll('#tab-resumes .pdf-iframe').forEach(iframe => {
+      if (!iframe.src && iframe.dataset.src) {
+        iframe.src = iframe.dataset.src;
+      }
+    });
   }
 }
 
@@ -735,8 +742,8 @@ async function openJobDrawer(jobId) {
     });
   }
 
-  // Resume Download link
-  const resumeBtn = document.getElementById('drawerResumeDownloadBtn');
+  // Resume Download / View link
+  const resumeBtn = document.getElementById('drawerResumeDownloadBtn') || document.getElementById('drawerResumeDownload');
   if (resumeBtn) {
     resumeBtn.href = `${API_BASE}/api/resume/${pid.includes('TEST') ? 'TEST_ENGINEER' : 'AI_ENGINEER'}`;
   }

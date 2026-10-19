@@ -28,12 +28,19 @@ def test_endpoints():
     r4 = client.get('/api/resume/AI_ENGINEER')
     assert r4.status_code == 200, f"AI Resume failed: {r4.status_code}"
     assert r4.headers['content-type'] == 'application/pdf'
-    print(f"  [PASS] AI Resume returned PDF ({len(r4.content)} bytes)")
+    assert 'inline' in r4.headers.get('content-disposition', ''), f"Expected inline disposition: {r4.headers.get('content-disposition')}"
+    print(f"  [PASS] AI Resume returned PDF ({len(r4.content)} bytes, disposition=inline)")
+
+    r4_dl = client.get('/api/resume/AI_ENGINEER?download=true')
+    assert r4_dl.status_code == 200
+    assert 'attachment' in r4_dl.headers.get('content-disposition', ''), f"Expected attachment disposition: {r4_dl.headers.get('content-disposition')}"
+    print("  [PASS] AI Resume with download=true returned attachment disposition")
 
     r5 = client.get('/api/resume/TEST_ENGINEER')
     assert r5.status_code == 200, f"Test Resume failed: {r5.status_code}"
     assert r5.headers['content-type'] == 'application/pdf'
-    print(f"  [PASS] Test Resume returned PDF ({len(r5.content)} bytes)")
+    assert 'inline' in r5.headers.get('content-disposition', '')
+    print(f"  [PASS] Test Resume returned PDF ({len(r5.content)} bytes, disposition=inline)")
 
     print("\n--- 4. Testing /api/cover-letter ---")
     r6 = client.post('/api/cover-letter', json={
