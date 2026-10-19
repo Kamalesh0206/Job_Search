@@ -590,7 +590,7 @@ def calculate_stats(all_jobs: List[Dict[str, Any]], profile_filter: Optional[str
         filtered = all_jobs
 
     total = len(filtered)
-    relevant = sum(1 for j in filtered if int(j.get("relevance_score", 0)) >= 60)
+    relevant = sum(1 for j in filtered if int(j.get("relevance_score", 0)) >= 69)
     high_match = sum(1 for j in filtered if int(j.get("relevance_score", 0)) > 70)
     confirmed_sponsorship = sum(1 for j in filtered if j.get("visa_sponsorship_status", "").upper() == "CONFIRMED")
     remote_jobs = sum(1 for j in filtered if "remote" in j.get("work_arrangement", "").lower() and "hybrid" not in j.get("work_arrangement", "").lower())

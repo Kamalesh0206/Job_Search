@@ -88,9 +88,9 @@
         <div class="stat-icon icon-cyan">📊</div>
       </div>
 
-      <div class="stat-card" id="card-relevant" role="button" tabindex="0" onclick="filterByCard('relevant')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByCard('relevant');}" title="Click to filter relevant jobs (Score 60+)">
+      <div class="stat-card" id="card-relevant" role="button" tabindex="0" onclick="filterByCard('relevant')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterByCard('relevant');}" title="Click to filter relevant jobs (Score 69+)">
         <div class="stat-info">
-          <div class="stat-label">Relevant Jobs (60+)</div>
+          <div class="stat-label">Relevant Jobs (69+)</div>
           <div id="stat-relevant" class="stat-value">--</div>
           <span class="stat-sub text-emerald" id="stat-relevant-sub">High Match</span>
         </div>
@@ -222,10 +222,9 @@
 
           <!-- Min Score -->
           <select id="filterMinScore" class="select-filter" onchange="applyFilters()">
-            <option value="0">All Scores (0+)</option>
-            <option value="60">Score 60+ (Relevant)</option>
-            <option value="75">Score 75+ (High Match)</option>
-            <option value="85">Score 85+ (Top Tier)</option>
+            <option value="69">Score 69%+ (Eligible Only)</option>
+            <option value="75">Score 75%+ (High Match)</option>
+            <option value="85">Score 85%+ (Top Tier)</option>
           </select>
 
           <!-- Posting Date Filter (Section 9) -->

@@ -41,22 +41,22 @@ def run_tests():
             page.wait_for_selector("#statsGrid")
             time.sleep(1)
 
-            # 1. TOTAL JOBS CARD
+            # 1. TOTAL JOBS CARD (Showing eligible jobs with score >= 69)
             print("Testing Card 1: Total Jobs Found...")
             page.click("#card-total")
             time.sleep(0.5)
             count_text = page.locator("#tabCountJobs").inner_text()
-            assert count_text == "225", f"Expected 225, got {count_text}"
+            assert count_text == "191", f"Expected 191, got {count_text}"
             assert "active" in page.locator("#card-total").get_attribute("class")
             print(f"  PASS: Card 1 Total Jobs ({count_text} jobs)")
 
-            # 2. RELEVANT JOBS CARD
-            print("Testing Card 2: Relevant Jobs (60+)...")
+            # 2. RELEVANT JOBS CARD (69+)
+            print("Testing Card 2: Relevant Jobs (69+)...")
             page.click("#card-relevant")
             time.sleep(0.5)
             count_text = page.locator("#tabCountJobs").inner_text()
-            assert count_text == "199", f"Expected 199, got {count_text}"
-            assert page.locator("#filterMinScore").input_value() == "60"
+            assert count_text == "191", f"Expected 191, got {count_text}"
+            assert page.locator("#filterMinScore").input_value() == "69"
             assert "active" in page.locator("#card-relevant").get_attribute("class")
             assert page.is_visible("#activeCardBanner")
             print(f"  PASS: Card 2 Relevant Jobs ({count_text} jobs)")
@@ -77,7 +77,7 @@ def run_tests():
             page.click("#jobsTableBody button:has-text('Clear Filter')")
             time.sleep(0.5)
             count_text = page.locator("#tabCountJobs").inner_text()
-            assert count_text == "225", f"Expected 225 after clear, got {count_text}"
+            assert count_text == "191", f"Expected 191 after clear, got {count_text}"
             assert not page.is_visible("#activeCardBanner")
             print(f"  PASS: Clear Filter restored {count_text} jobs")
 
@@ -86,7 +86,7 @@ def run_tests():
             page.click("#card-remote")
             time.sleep(0.5)
             count_text = page.locator("#tabCountJobs").inner_text()
-            assert count_text == "34", f"Expected 34, got {count_text}"
+            assert count_text == "20", f"Expected 20, got {count_text}"
             assert page.locator("#filterWorkArrangement").input_value() == "Remote"
             print(f"  PASS: Card 4 Remote Positions ({count_text} jobs)")
 
@@ -96,7 +96,7 @@ def run_tests():
             page.click("#profileSelector button[data-profile='AI_ENGINEER']")
             time.sleep(0.5)
             count_text = page.locator("#tabCountJobs").inner_text()
-            assert count_text == "33", f"Expected 33 for AI Remote, got {count_text}"
+            assert count_text == "19", f"Expected 19 for AI Remote, got {count_text}"
             assert page.is_visible("#activeCardBanner")
             assert "AI Engineer" in page.locator("#activeCardLabel").inner_text()
             print(f"  PASS: Remote filter preserved on AI Engineer ({count_text} jobs)")
@@ -149,7 +149,7 @@ def run_tests():
             page.click("#activeCardBanner button")
             time.sleep(0.5)
             count_text = page.locator("#tabCountJobs").inner_text()
-            assert count_text == "225", f"Expected 225 after clear, got {count_text}"
+            assert count_text == "191", f"Expected 191 after clear, got {count_text}"
 
             # Click Remote card and capture screenshot of active state
             page.click("#card-remote")

@@ -246,15 +246,22 @@ def get_jobs(
     search: Optional[str] = Query(None),
     posting_date: Optional[str] = Query(None),
     limit: Optional[int] = Query(500),
+    include_all_scores: bool = Query(False, description="Set true to include jobs with score < 69"),
     _: bool = Depends(verify_authentication)
 ):
+    # Enforce minimum threshold: never show jobs with score < 69 unless explicitly requested
+    effective_min_score = min_score
+    if not include_all_scores:
+        if effective_min_score is None or effective_min_score < 69:
+            effective_min_score = 69
+
     jobs = database.get_all_jobs(
         profile_id=profile,
         status=status,
         country=country,
         work_arrangement=work_arrangement,
         sponsorship=sponsorship,
-        min_score=min_score,
+        min_score=effective_min_score,
         search=search,
         posting_date=posting_date,
         limit=limit

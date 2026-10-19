@@ -9,7 +9,7 @@ def test_api():
     profiles = ["ALL", "AI_ENGINEER", "TEST_ENGINEER"]
     cards = [
         ("total", {}),
-        ("relevant", {"min_score": 60}),
+        ("relevant", {"min_score": 69}),
         ("sponsorship", {"sponsorship": "CONFIRMED"}),
         ("remote", {"work_arrangement": "Remote"}),
         ("applied", {"status": "APPLIED"}),

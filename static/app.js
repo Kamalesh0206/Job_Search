@@ -83,7 +83,7 @@ const state = {
     workArrangement: 'All',
     sponsorship: 'All',
     postingDate: 'All',
-    minScore: 0,
+    minScore: 69,
     search: ''
   },
   searchPollingInterval: null
@@ -347,49 +347,49 @@ function getCardConfig(cardType) {
         id: 'total',
         label: 'Total Jobs Found',
         badge: '📊 All Jobs',
-        filters: { status: 'All', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 0, search: '' }
+        filters: { status: 'All', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 69, search: '' }
       };
     case 'relevant':
       return {
         id: 'relevant',
-        label: 'Relevant Jobs (60+)',
-        badge: '🎯 Score 60+',
-        filters: { status: 'All', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 60, search: '' }
+        label: 'Relevant Jobs (69+)',
+        badge: '🎯 Score 69+',
+        filters: { status: 'All', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 69, search: '' }
       };
     case 'sponsorship':
       return {
         id: 'sponsorship',
         label: 'Confirmed Sponsorship',
         badge: '🛂 Confirmed Visa Only',
-        filters: { status: 'All', country: 'All', workArrangement: 'All', sponsorship: 'CONFIRMED', postingDate: 'All', minScore: 0, search: '' }
+        filters: { status: 'All', country: 'All', workArrangement: 'All', sponsorship: 'CONFIRMED', postingDate: 'All', minScore: 69, search: '' }
       };
     case 'remote':
       return {
         id: 'remote',
         label: 'Remote Positions',
         badge: '🌍 Remote Only',
-        filters: { status: 'All', country: 'All', workArrangement: 'Remote', sponsorship: 'All', postingDate: 'All', minScore: 0, search: '' }
+        filters: { status: 'All', country: 'All', workArrangement: 'Remote', sponsorship: 'All', postingDate: 'All', minScore: 69, search: '' }
       };
     case 'applied':
       return {
         id: 'applied',
         label: 'Applications Submitted',
         badge: '✅ Submitted Only',
-        filters: { status: 'APPLIED', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 0, search: '' }
+        filters: { status: 'APPLIED', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 69, search: '' }
       };
     case 'interviews':
       return {
         id: 'interviews',
         label: 'Interviews / Pipeline',
         badge: '💬 Active Stages',
-        filters: { status: 'INTERVIEW', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 0, search: '' }
+        filters: { status: 'INTERVIEW', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 69, search: '' }
       };
     case 'rejections':
       return {
         id: 'rejections',
         label: 'Rejections',
         badge: '🛑 Rejected Only',
-        filters: { status: 'REJECTED', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 0, search: '' }
+        filters: { status: 'REJECTED', country: 'All', workArrangement: 'All', sponsorship: 'All', postingDate: 'All', minScore: 69, search: '' }
       };
     default:
       return null;
@@ -465,7 +465,7 @@ function clearCardFilter() {
     workArrangement: 'All',
     sponsorship: 'All',
     postingDate: 'All',
-    minScore: 0,
+    minScore: 69,
     search: ''
   };
 
@@ -482,7 +482,7 @@ function clearCardFilter() {
   if (sponEl) sponEl.value = 'All';
 
   const minScoreEl = document.getElementById('filterMinScore');
-  if (minScoreEl) minScoreEl.value = '0';
+  if (minScoreEl) minScoreEl.value = '69';
 
   const postingEl = document.getElementById('filterPostingDate');
   if (postingEl) postingEl.value = 'All';
@@ -549,7 +549,10 @@ function renderJobsTable(jobs) {
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  if (!jobs || jobs.length === 0) {
+  // Enforce score threshold strictly: do not show any job with score < 69%
+  const eligibleJobs = (jobs || []).filter(j => (parseInt(j.relevance_score, 10) || 0) >= 69);
+
+  if (!eligibleJobs || eligibleJobs.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="11" style="text-align: center; padding: 56px 20px; color: var(--text-dim);">
@@ -557,7 +560,7 @@ function renderJobsTable(jobs) {
             <div style="font-size: 2.2rem; margin-bottom: 12px; opacity: 0.85;">🔎</div>
             <h4 style="color: var(--text-main); font-size: 1.1rem; margin-bottom: 8px; font-weight: 700;">No jobs match this filter.</h4>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5;">
-              There are currently no job records matching the selected criteria under the <strong>${escapeHtml(getProfileDisplayName(state.activeProfile))}</strong> scope.
+              There are currently no job records matching the selected criteria (min score 69%+) under the <strong>${escapeHtml(getProfileDisplayName(state.activeProfile))}</strong> scope.
             </p>
             <button class="btn btn-secondary btn-sm" onclick="clearCardFilter()" style="display: inline-flex; align-items: center; gap: 6px;">
               <span>✕</span> Clear Filter
@@ -569,13 +572,13 @@ function renderJobsTable(jobs) {
     return;
   }
 
-  jobs.forEach(job => {
+  eligibleJobs.forEach(job => {
     const tr = document.createElement('tr');
 
     const score = parseInt(job.relevance_score || 0);
     let scoreClass = 'score-low';
     if (score >= 75) scoreClass = 'score-high';
-    else if (score >= 60) scoreClass = 'score-med';
+    else if (score >= 69) scoreClass = 'score-med';
 
     const pid = (job.role_category || job.profile_id || 'AI_ENGINEER').toUpperCase();
     let roleClass = 'badge-ai';
